@@ -1,0 +1,10 @@
+{
+  "java.jdt.ls.java.home": "C:\\Users\\Windows 11\\.antigravity\\extensions\\redhat.java-1.52.0-win32-x64\\jre\\21.0.9-win32-x86_64",
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "C:\\Users\\Windows 11\\.antigravity\\extensions\\redhat.java-1.52.0-win32-x64\\jre\\21.0.9-win32-x86_64",
+      "default": true
+    }
+  ]
+}

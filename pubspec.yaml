@@ -1,0 +1,70 @@
+name: monitoringwaterapk
+description: "Aplikasi Monitoring Kualitas Air PDAM dengan Fuzzy Logic Mamdani"
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # HTTP & MQTT
+  http: ^1.2.2
+  mqtt_client: ^10.3.0
+
+  # State Management
+  provider: ^6.1.2
+
+  # Charts & Visualization
+  fl_chart: ^0.69.0
+
+  # Local Notifications (Push Notification)
+  flutter_local_notifications: ^17.2.4
+
+  # Shared Preferences (Local Storage)
+  shared_preferences: ^2.3.3
+
+  # Date Formatting
+  intl: ^0.19.0
+
+  # Icons
+  flutter_svg: ^2.0.10+1
+
+  # Permission Handler
+  permission_handler: ^11.3.1
+
+  # Timezone
+  timezone: ^0.9.4
+
+  # JSON serialization
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+#  fonts:
+#    - family: Poppins
+#      fonts:
+#        - asset: assets/fonts/Poppins-Regular.ttf
+#        - asset: assets/fonts/Poppins-Medium.ttf
+#          weight: 500
+#        - asset: assets/fonts/Poppins-SemiBold.ttf
+#          weight: 600
+#        - asset: assets/fonts/Poppins-Bold.ttf
+#          weight: 700
