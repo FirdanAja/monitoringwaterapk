@@ -251,7 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: TextStyle(
                 fontFamily: 'Poppins',
                 color: AppColors.textSecondary,
-                fontSize: 13,
+                fontSize: 14,
               ),
             ),
           ],
