@@ -12,24 +12,13 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late TextEditingController _brokerController;
-  late TextEditingController _portController;
   bool _notifEnabled = true;
 
   @override
   void initState() {
     super.initState();
     final provider = context.read<SensorProvider>();
-    _brokerController = TextEditingController(text: provider.mqttBroker);
-    _portController = TextEditingController(text: provider.mqttPort.toString());
     _notifEnabled = provider.notificationsEnabled;
-  }
-
-  @override
-  void dispose() {
-    _brokerController.dispose();
-    _portController.dispose();
-    super.dispose();
   }
 
   @override
@@ -59,61 +48,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // MQTT Configuration
-                      _buildSectionHeader('Konfigurasi MQTT / ESP8266'),
-                      const SizedBox(height: 12),
-                      GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildTextField(
-                              controller: _brokerController,
-                              label: 'IP Broker MQTT',
-                              hint: '192.168.1.100',
-                              icon: Icons.router,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildTextField(
-                              controller: _portController,
-                              label: 'Port MQTT',
-                              hint: '1883',
-                              icon: Icons.settings_ethernet,
-                              keyboardType: TextInputType.number,
-                            ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _saveAndReconnect(provider),
-                                icon: const Icon(
-                                  Icons.refresh,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'Simpan & Reconnect',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
                       // Notifikasi
                       _buildSectionHeader('Notifikasi'),
                       const SizedBox(height: 12),
@@ -196,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppColors.bgSurface,
                               height: 20,
                             ),
-                            _infoRow('Protokol IoT', 'MQTT over TCP'),
+                            _infoRow('Protokol IoT', 'Firebase Realtime Database'),
                             const Divider(
                               color: AppColors.bgSurface,
                               height: 20,
@@ -252,59 +186,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14,
-            color: AppColors.textPrimary,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(
-              fontFamily: 'Poppins',
-              color: AppColors.textMuted,
-            ),
-            prefixIcon: Icon(icon, color: AppColors.accent, size: 20),
-            filled: true,
-            fillColor: AppColors.bgSurface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: AppColors.accent.withValues(alpha: 0.5),
-                width: 1,
-              ),
-            ),
           ),
         ),
       ],
@@ -388,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Text(
             value,
             style: TextStyle(
-              fontFamily: 'Poppins',
+               fontFamily: 'Poppins',
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: color,
@@ -406,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           label,
           style: const TextStyle(
-            fontFamily: 'Poppins',
+             fontFamily: 'Poppins',
             fontSize: 12,
             color: AppColors.textMuted,
           ),
@@ -414,7 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           value,
           style: const TextStyle(
-            fontFamily: 'Poppins',
+             fontFamily: 'Poppins',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
@@ -466,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Buruk (20-40)',
           'Cukup (40-60)',
           'Baik (60-80)',
-          'Sangat Baik (80-100)',
+          'Sangat Baik (80-100)', 
         ],
       },
       {
@@ -486,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 section['title'] as String,
                 style: const TextStyle(
-                  fontFamily: 'Poppins',
+                   fontFamily: 'Poppins',
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.accent,
@@ -510,7 +391,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Text(
                         item,
                         style: const TextStyle(
-                          fontFamily: 'Poppins',
+                           fontFamily: 'Poppins',
                           fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
@@ -525,28 +406,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }).toList(),
     );
   }
-
-  void _saveAndReconnect(SensorProvider provider) async {
-    final port = int.tryParse(_portController.text) ?? 1883;
-    await provider.updateSettings(
-      broker: _brokerController.text.trim(),
-      port: port,
-    );
-    await provider.reconnect();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Pengaturan disimpan. Mencoba koneksi ulang...',
-            style: TextStyle(fontFamily: 'Poppins', color: Colors.white),
-          ),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    }
-  }
 }
+// Force VS Code reload event 1

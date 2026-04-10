@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "558626168804",
+    "project_id": "monitoring-air-pdam-8d0a8",
+    "storage_bucket": "monitoring-air-pdam-8d0a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:558626168804:android:2491ca7259d087cf6ab1f1",
+        "android_client_info": {
+          "package_name": "com.example.monitoringwaterapk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "558626168804-tlv18vs0thmu0q70bmka3c9f41dthfei.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9MMUBh-YR8uOkhk8hZISWCWLVaRHXttY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "558626168804-tlv18vs0thmu0q70bmka3c9f41dthfei.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/sensor_provider.dart';
-import '../services/mqtt_service.dart';
 import '../services/fuzzy_mamdani_service.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
@@ -46,9 +45,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         final data = provider.currentData;
         final fuzzy = provider.lastFuzzyResult;
         final isConnected =
-            provider.connectionStatus == MqttConnectionStatus.connected;
-        final isSimulation =
-            provider.connectionStatus == MqttConnectionStatus.simulation;
+            provider.connectionStatus == ConnectionStatus.connected;
+        const isSimulation = false;
 
         return Scaffold(
           backgroundColor: Colors.transparent,

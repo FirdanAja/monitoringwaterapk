@@ -2,18 +2,18 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/sensor_data.dart';
-import '../services/mqtt_service.dart';
 import '../services/fuzzy_mamdani_service.dart';
 import '../services/notification_service.dart';
 
+enum ConnectionStatus { disconnected, connected }
+
 class SensorProvider extends ChangeNotifier {
-  final MqttService _mqttService = MqttService();
   final FuzzyMamdaniService _fuzzyService = FuzzyMamdaniService();
   final NotificationService _notificationService = NotificationService();
 
   // Current data
   SensorData? _currentData;
-  MqttConnectionStatus _connectionStatus = MqttConnectionStatus.disconnected;
+  ConnectionStatus _connectionStatus = ConnectionStatus.disconnected;
   bool _isLoading = false;
   FuzzyResult? _lastFuzzyResult;
 
@@ -22,20 +22,18 @@ class SensorProvider extends ChangeNotifier {
   List<SensorData> _filteredHistory = [];
 
   // Settings
-  String _mqttBroker = '192.168.1.100';
-  int _mqttPort = 1883;
   bool _notificationsEnabled = true;
 
-  // Getters
+  // Getters (Termasuk dummy MQTT untuk mencegah IDE error dari cache lama)
   SensorData? get currentData => _currentData;
-  MqttConnectionStatus get connectionStatus => _connectionStatus;
+  ConnectionStatus get connectionStatus => _connectionStatus;
   bool get isLoading => _isLoading;
   FuzzyResult? get lastFuzzyResult => _lastFuzzyResult;
   List<SensorData> get historyData => _historyData;
   List<SensorData> get filteredHistory => _filteredHistory;
-  String get mqttBroker => _mqttBroker;
-  int get mqttPort => _mqttPort;
   bool get notificationsEnabled => _notificationsEnabled;
+  String get mqttBroker => ''; // Deprecated
+  int get mqttPort => 1883; // Deprecated
 
   Future<void> initialize() async {
     _isLoading = true;
@@ -45,59 +43,87 @@ class SensorProvider extends ChangeNotifier {
     await _loadSettings();
     await _loadHistoryFromPrefs();
 
-    // MOCK DATA: Seed initial data if empty
-    if (_historyData.isEmpty) {
-      _currentData = SensorData(
-        ph: 7.2,
-        turbidity: 2.5,
-        temperature: 24.5,
-        timestamp: DateTime.now(),
-        status: WaterQualityStatus.drinkable,
-        fuzzyResult: 'Normal',
-        qualityScore: 85.0,
-      );
-      _historyData.add(_currentData!);
-    } else {
-      _currentData = _historyData.first;
-    }
-
-    // Start mock data stream
-    _startMockDataStream();
+    // Gunakan dummy data karena alat belum ada
+    _startDummyStream();
 
     _isLoading = false;
     notifyListeners();
   }
 
-  void _startMockDataStream() {
-    _connectionStatus = MqttConnectionStatus.connected;
+  void _startDummyStream() {
+    _connectionStatus = ConnectionStatus.connected;
+    notifyListeners();
 
-    // Simulasikan data masuk setiap 5 detik
-    Stream.periodic(const Duration(seconds: 5)).listen((_) {
-      final random = DateTime.now().second % 3;
+    // Timer untuk simulasi data setiap 3 detik
+    Stream.periodic(const Duration(seconds: 3)).listen((_) {
+      final double ph = 6.5 + (DateTime.now().millisecond % 100) / 50; // Range 6.5 - 8.5
+      final double turbidity = (DateTime.now().second % 10).toDouble(); // Range 0 - 10 NTU
+      final double temperature = 24.0 + (DateTime.now().second % 5); // Range 24 - 29 C
+
+      final fuzzyResult = _fuzzyService.evaluate(ph, turbidity, temperature);
+      
       final newData = SensorData(
-        ph: 6.5 + (DateTime.now().second % 20) / 10.0,
-        turbidity: 1.0 + (DateTime.now().minute % 10) / 2.0,
-        temperature: 24.0 + (DateTime.now().second % 50) / 10.0,
+        ph: ph,
+        turbidity: turbidity,
+        temperature: temperature,
         timestamp: DateTime.now(),
-        status: random == 0
-            ? WaterQualityStatus.drinkable
-            : (random == 1
-                ? WaterQualityStatus.usable
-                : WaterQualityStatus.notDrinkable),
-        fuzzyResult: 'Simulated',
-        qualityScore: 50.0 + (DateTime.now().second % 40),
+        status: _mapStatusToEnum(fuzzyResult.statusLabel),
+        fuzzyResult: fuzzyResult.statusLabel,
+        qualityScore: fuzzyResult.qualityScore,
       );
-      _onSensorDataReceived(newData);
+
+      _onSensorDataReceived(newData, fuzzyResult);
     });
   }
 
-  void _onSensorDataReceived(SensorData data) async {
+  void _startFirebaseStream() {
+    // Dimatikan sementara sesuai permintaan user
+    /*
+    _connectionStatus = ConnectionStatus.connected;
+      if (event.snapshot.value != null) {
+        final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+        
+        // Membaca nilai dari Firebase dengan fallback default
+        final double ph = (data['ph'] ?? 7.0).toDouble();
+        final double turbidity = (data['turbidity'] ?? 0.0).toDouble();
+        final double temperature = (data['temperature'] ?? 25.0).toDouble();
+
+        // Evaluasi fuzzy
+        final fuzzyResult = _fuzzyService.evaluate(ph, turbidity, temperature);
+        
+        // Buat objek SensorData
+        final newData = SensorData(
+          ph: ph,
+          turbidity: turbidity,
+          temperature: temperature,
+          timestamp: DateTime.now(), // Memakai waktu penerimaan di hp
+          status: _mapStatusToEnum(fuzzyResult.statusLabel),
+          fuzzyResult: fuzzyResult.statusLabel,
+          qualityScore: fuzzyResult.qualityScore,
+        );
+
+        _onSensorDataReceived(newData, fuzzyResult);
+      }
+    }, onError: (error) {
+       _connectionStatus = ConnectionStatus.disconnected;
+       notifyListeners();
+    });
+    */
+  }
+  
+  WaterQualityStatus _mapStatusToEnum(String statusLevel) {
+    if (statusLevel.toLowerCase().contains("aman") || statusLevel.toLowerCase().contains("baik")) {
+      return WaterQualityStatus.drinkable;
+    } else if (statusLevel.toLowerCase().contains("waspada") || statusLevel.toLowerCase().contains("sedang")) {
+      return WaterQualityStatus.usable;
+    } else {
+      return WaterQualityStatus.notDrinkable;
+    }
+  }
+
+  void _onSensorDataReceived(SensorData data, FuzzyResult fuzzyResult) async {
     _currentData = data;
-    _lastFuzzyResult = _fuzzyService.evaluate(
-      data.ph,
-      data.turbidity,
-      data.temperature,
-    );
+    _lastFuzzyResult = fuzzyResult;
 
     // Simpan ke history
     _historyData.insert(0, data);
@@ -108,7 +134,7 @@ class SensorProvider extends ChangeNotifier {
 
     await _saveHistoryToPrefs();
 
-    // Kirim notifikasi kalau notif diaktifkan
+    // Kirim notifikasi kalau notif diaktifkan dan air bahaya
     if (_notificationsEnabled &&
         (data.status == WaterQualityStatus.notDrinkable)) {
       await _notificationService.sendWaterQualityAlert(
@@ -194,12 +220,10 @@ class SensorProvider extends ChangeNotifier {
 
   // Settings
   Future<void> updateSettings({
-    String? broker,
-    int? port,
+    String? broker, // Deprecated
+    int? port, // Deprecated
     bool? notifications,
   }) async {
-    if (broker != null) _mqttBroker = broker;
-    if (port != null) _mqttPort = port;
     if (notifications != null) _notificationsEnabled = notifications;
     await _saveSettings();
     notifyListeners();
@@ -209,7 +233,7 @@ class SensorProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     await Future.delayed(const Duration(seconds: 1));
-    _startMockDataStream();
+    _startFirebaseStream();
     _isLoading = false;
     notifyListeners();
   }
@@ -233,15 +257,11 @@ class SensorProvider extends ChangeNotifier {
 
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('mqtt_broker', _mqttBroker);
-    await prefs.setInt('mqtt_port', _mqttPort);
     await prefs.setBool('notifications_enabled', _notificationsEnabled);
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    _mqttBroker = prefs.getString('mqtt_broker') ?? '192.168.1.100';
-    _mqttPort = prefs.getInt('mqtt_port') ?? 1883;
     _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
   }
 
@@ -251,11 +271,5 @@ class SensorProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('sensor_history');
     notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _mqttService.dispose();
-    super.dispose();
   }
 }
