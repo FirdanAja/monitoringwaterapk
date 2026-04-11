@@ -12,9 +12,12 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    // Commented out to avoid "different roots" error when project is on D: and pub cache is on C:
-    // val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    // project.layout.buildDirectory.value(newSubprojectBuildDir)
+    val projectRoot = project.projectDir.toPath().root
+    val mainRoot = rootProject.projectDir.toPath().root
+    if (projectRoot == mainRoot) {
+        val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+        project.layout.buildDirectory.value(newSubprojectBuildDir)
+    }
 }
 subprojects {
     project.evaluationDependsOn(":app")
