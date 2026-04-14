@@ -5,6 +5,11 @@ import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
 import '../widgets/sensor_widgets.dart';
 import '../widgets/chart_widgets.dart';
+import 'dart:io';
+import 'package:excel/excel.dart' hide Border;
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:intl/intl.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -46,10 +51,10 @@ class _ReportScreenState extends State<ReportScreen> {
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              const SliverAppBar(
+              SliverAppBar(
                 pinned: true,
                 backgroundColor: AppColors.bgDark,
-                title: Text(
+                title: const Text(
                   'Laporan Bulanan',
                   style: TextStyle(
                     fontFamily: 'Poppins',
@@ -57,6 +62,14 @@ class _ReportScreenState extends State<ReportScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                actions: [
+                  if (report != null && report.dailyData.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.download, color: AppColors.accent),
+                      tooltip: 'Export ke Excel',
+                      onPressed: () => _exportToExcel(report),
+                    ),
+                ],
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -567,5 +580,84 @@ class _ReportScreenState extends State<ReportScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _exportToExcel(MonthlyReport report) async {
+    try {
+      var excel = Excel.createExcel();
+      Sheet sheetObject = excel['Laporan Kualitas Air'];
+      excel.setDefaultSheet('Laporan Kualitas Air');
+
+      // Add Headers
+      sheetObject.appendRow([
+        TextCellValue('Tanggal & Waktu'),
+        TextCellValue('pH'),
+        TextCellValue('Kekeruhan (NTU)'),
+        TextCellValue('Suhu (°C)'),
+        TextCellValue('Skor Kualitas'),
+        TextCellValue('Status'),
+      ]);
+
+      // Add Data
+      for (var data in report.dailyData) {
+        sheetObject.appendRow([
+          TextCellValue(DateFormat('yyyy-MM-dd HH:mm:ss').format(data.timestamp)),
+          TextCellValue(data.ph.toStringAsFixed(2)),
+          TextCellValue(data.turbidity.toStringAsFixed(1)),
+          TextCellValue(data.temperature.toStringAsFixed(1)),
+          TextCellValue(data.qualityScore.toStringAsFixed(1)),
+          TextCellValue(data.status.label),
+        ]);
+      }
+
+      // Save to temporary file
+      var fileBytes = excel.save();
+      if (fileBytes == null) throw Exception("Failed to generate excel file bytes.");
+      
+      // Request Storage Permission just in case
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          await Permission.storage.request();
+        }
+      }
+
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      String filePath = '';
+      if (Platform.isAndroid) {
+        Directory downloadDir = Directory('/storage/emulated/0/Download');
+        if (!await downloadDir.exists()) {
+          downloadDir = await getExternalStorageDirectory() ?? Directory('/storage/emulated/0/Download');
+        }
+        filePath = '${downloadDir.path}/Laporan_Kualitas_Air_$timestamp.xlsx';
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        filePath = '${directory.path}/Laporan_Kualitas_Air_$timestamp.xlsx';
+      }
+      
+      final file = File(filePath);
+      await file.writeAsBytes(fileBytes);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Berhasil mengunduh Laporan!\nTersimpan di:\n$filePath'),
+            duration: const Duration(seconds: 5),
+            backgroundColor: AppColors.good,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengekspor laporan: $e')),
+        );
+      }
+    }
   }
 }
