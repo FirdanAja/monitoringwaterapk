@@ -154,16 +154,23 @@ class _DashboardScreenState extends State<DashboardScreen>
                         children: [
                           Row(
                             children: [
-                              AwesomeWaterLogo(size: context.responsive.w(32)),
-                              SizedBox(width: context.responsive.w(12)),
-                              Text(
-                                'TirtaSmart',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: context.responsive.sp(22),
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: 0.5,
+                              Image.asset(
+                                'assets/icons/logo.png',
+                                width: context.responsive.w(48),
+                                height: context.responsive.w(48),
+                              ),
+                              const SizedBox(width: 4),
+                              SizedBox(
+                                width: context.responsive.w(150),
+                                child: Text(
+                                  'Digitalisasi Air untuk Masa Depan',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: context.responsive.sp(12),
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                    height: 1.2,
+                                  ),
                                 ),
                               ),
                             ],

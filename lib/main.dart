@@ -11,7 +11,6 @@ import 'screens/settings_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
-import 'widgets/sensor_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -103,7 +102,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       backgroundColor: AppColors.bgDark,
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.bgGradient),
-        child: IndexedStack(index: _currentIndex, children: _screens),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(
+              opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.96, end: 1.0)
+                    .animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutQuint,
+                )),
+                child: child,
+              ),
+            );
+          },
+          child: KeyedSubtree(
+            key: ValueKey<int>(_currentIndex),
+            child: _screens[_currentIndex],
+          ),
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -114,39 +132,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       backgroundColor: AppColors.bgDark,
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.bgGradient),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo
-              AwesomeWaterLogo(size: 100),
-              SizedBox(height: 28),
-              Text(
-                'TirtaSmart',
+              Image.asset(
+                'assets/icons/logo.png',
+                width: 120,
+                height: 120,
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Digitalisasi Air untuk Masa Depan',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  letterSpacing: 1.2,
+                  letterSpacing: 0.5,
                 ),
               ),
-              SizedBox(height: 6),
-              Text(
-                'Smart Water Monitoring System',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              SizedBox(height: 40),
-              CircularProgressIndicator(
+              const SizedBox(height: 40),
+              const CircularProgressIndicator(
                 color: AppColors.accent,
                 strokeWidth: 3,
               ),
-              SizedBox(height: 16),
-              Text(
+              const SizedBox(height: 16),
+              const Text(
                 'Menginisialisasi sistem...',
                 style: TextStyle(
                   fontFamily: 'Poppins',

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_helper.dart';
 import '../main.dart';
-import '../widgets/sensor_widgets.dart';
+
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -98,7 +98,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 ),
               ),
             ),
-            
+
             // Content
             SafeArea(
               child: LayoutBuilder(
@@ -116,197 +116,202 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             vertical: context.responsive.h(24),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               const SizedBox(height: 20),
-                    
-                    // Logo and Icon
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: AwesomeWaterLogo(size: context.responsive.w(80)),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    
-                    // Title
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Text(
-                          'TirtaSmart',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: context.responsive.sp(40),
-                            fontWeight: FontWeight.w800,
-                            height: 1.1,
-                            color: AppColors.textPrimary,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+
+                              // Logo and Icon
+                              SlideTransition(
+                                position: _slideAnimation,
+                                child: FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Image.asset(
+                                    'assets/icons/logo.png',
+                                    width: context.responsive.w(180),
+                                    height: context.responsive.w(180),
+                                  ),
+                                ),
+                              ),
+
+                              // Title
+                              SlideTransition(
+                                position: _slideAnimation,
+                                child: FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Text(
+                                    'Digitalisasi Air untuk Masa Depan',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: context.responsive.sp(12),
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Glassmorphism Features Card
+                              SlideTransition(
+                                position: _slideAnimation,
+                                child: FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                          sigmaX: 10, sigmaY: 10),
+                                      child: Container(
+                                        padding: EdgeInsets.all(
+                                            context.responsive.w(24)),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.03),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.1),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: const Column(
+                                          children: [
+                                            _FeatureItem(
+                                              icon: Icons.speed_rounded,
+                                              title: 'Real-time Data',
+                                              subtitle:
+                                                  'Monitoring akurat tanpa jeda',
+                                            ),
+                                            SizedBox(height: 16),
+                                            _FeatureItem(
+                                              icon: Icons.analytics_rounded,
+                                              title: 'Fuzzy Logic',
+                                              subtitle:
+                                                  'Klasifikasi pintar kualitas air',
+                                            ),
+                                            SizedBox(height: 16),
+                                            _FeatureItem(
+                                              icon: Icons
+                                                  .notifications_active_rounded,
+                                              title: 'Peringatan Dini',
+                                              subtitle:
+                                                  'Notifikasi saat air tidak layak',
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 40),
+
+                              // Get Started Button
+                              SlideTransition(
+                                position: _slideAnimation,
+                                child: FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pushReplacement(
+                                          PageRouteBuilder(
+                                            pageBuilder: (context, animation,
+                                                    secondaryAnimation) =>
+                                                const MainNavigationScreen(),
+                                            transitionsBuilder: (context,
+                                                animation,
+                                                secondaryAnimation,
+                                                child) {
+                                              const begin = Offset(1.0, 0.0);
+                                              const end = Offset.zero;
+                                              const curve =
+                                                  Curves.easeInOutQuart;
+
+                                              var tween = Tween(
+                                                      begin: begin, end: end)
+                                                  .chain(
+                                                      CurveTween(curve: curve));
+                                              var offsetAnimation =
+                                                  animation.drive(tween);
+
+                                              return SlideTransition(
+                                                position: offsetAnimation,
+                                                child: child,
+                                              );
+                                            },
+                                            transitionDuration: const Duration(
+                                                milliseconds: 600),
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      child: Ink(
+                                        decoration: BoxDecoration(
+                                          gradient: AppColors.primaryGradient,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.accent
+                                                  .withValues(alpha: 0.4),
+                                              blurRadius: 16,
+                                              offset: const Offset(0, 8),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                'Mulai Monitoring',
+                                                style: TextStyle(
+                                                  fontFamily: 'Poppins',
+                                                  fontSize:
+                                                      context.responsive.sp(16),
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              const Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  color: Colors.white,
+                                                  size: 20),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Subtitle
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Text(
-                          'Pantau pH, kekeruhan, dan suhu air secara real-time dengan akurasi tinggi menggunakan analisa Fuzzy Logic Mamdani.',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: context.responsive.sp(15),
-                            height: 1.5,
-                            color: AppColors.textSecondary.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Glassmorphism Features Card
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                              padding: EdgeInsets.all(context.responsive.w(24)),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.03),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Column(
-                                children: [
-                                  _FeatureItem(
-                                    icon: Icons.speed_rounded,
-                                    title: 'Real-time Data',
-                                    subtitle: 'Monitoring akurat tanpa jeda',
-                                  ),
-                                  SizedBox(height: 16),
-                                  _FeatureItem(
-                                    icon: Icons.analytics_rounded,
-                                    title: 'Fuzzy Logic',
-                                    subtitle: 'Klasifikasi pintar kualitas air',
-                                  ),
-                                  SizedBox(height: 16),
-                                  _FeatureItem(
-                                    icon: Icons.notifications_active_rounded,
-                                    title: 'Peringatan Dini',
-                                    subtitle: 'Notifikasi saat air tidak layak',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 40),
-                    
-                    // Get Started Button
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).pushReplacement(
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) =>
-                                      const MainNavigationScreen(),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    const begin = Offset(1.0, 0.0);
-                                    const end = Offset.zero;
-                                    const curve = Curves.easeInOutQuart;
-
-                                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                    var offsetAnimation = animation.drive(tween);
-
-                                    return SlideTransition(
-                                      position: offsetAnimation,
-                                      child: child,
-                                    );
-                                  },
-                                  transitionDuration: const Duration(milliseconds: 600),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: AppColors.primaryGradient,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.accent.withValues(alpha: 0.4),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Container(
-                                alignment: Alignment.center,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Mulai Monitoring',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: context.responsive.sp(16),
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
-          ),
-        );
-      },
-    ),
-  ),
           ],
         ),
       ),
