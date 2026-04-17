@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/sensor_provider.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
+import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
 import '../widgets/chart_widgets.dart';
 
@@ -44,11 +45,11 @@ class _HistoryScreenState extends State<HistoryScreen>
               SliverAppBar(
                 floating: true,
                 backgroundColor: AppColors.bgDark,
-                title: const Text(
+                title: Text(
                   'Riwayat Data Sensor',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 18,
+                    fontSize: context.responsive.sp(18),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -74,9 +75,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                   indicatorSize: TabBarIndicatorSize.label,
                   labelColor: AppColors.accent,
                   unselectedLabelColor: AppColors.textMuted,
-                  labelStyle: const TextStyle(
+                  labelStyle: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 13,
+                    fontSize: context.responsive.sp(13),
                     fontWeight: FontWeight.w600,
                   ),
                   tabs: const [
@@ -100,26 +101,26 @@ class _HistoryScreenState extends State<HistoryScreen>
     final data = provider.filteredHistory;
 
     if (data.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: AppColors.textMuted),
-            SizedBox(height: 12),
+            const Icon(Icons.history, size: 64, color: AppColors.textMuted),
+            SizedBox(height: context.responsive.h(12)),
             Text(
               'Belum ada data historis',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: context.responsive.sp(14),
                 color: AppColors.textMuted,
               ),
             ),
-            SizedBox(height: 6),
+            SizedBox(height: context.responsive.h(6)),
             Text(
               'Data akan muncul saat sensor mulai mengirim',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 12,
+                fontSize: context.responsive.sp(12),
                 color: AppColors.textMuted,
               ),
             ),
@@ -129,7 +130,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsive.w(16)),
       physics: const BouncingScrollPhysics(),
       itemCount: data.length,
       itemBuilder: (ctx, i) => _buildHistoryItem(data[i], i),
@@ -138,15 +139,15 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Widget _buildHistoryItem(SensorData d, int index) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: context.responsive.h(8)),
       child: GlassCard(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(context.responsive.w(14)),
         borderColor: _getStatusColor(d.status).withValues(alpha: 0.2),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: context.responsive.w(40),
+              height: context.responsive.w(40),
               decoration: BoxDecoration(
                 color: _getStatusColor(d.status).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
@@ -156,7 +157,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   '${index + 1}',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: context.responsive.sp(12),
                     color: _getStatusColor(d.status),
                     fontWeight: FontWeight.w600,
                   ),
@@ -173,9 +174,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                     children: [
                       Text(
                         DateFormat('dd MMM, HH:mm').format(d.timestamp),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 12,
+                          fontSize: context.responsive.sp(12),
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -207,9 +208,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                   const SizedBox(height: 4),
                   Text(
                     'Skor Fuzzy: ${d.qualityScore.toStringAsFixed(1)}/100',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 11,
+                      fontSize: context.responsive.sp(11),
                       color: AppColors.textMuted,
                     ),
                   ),
@@ -224,7 +225,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Widget _sensorChip(String unit, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+      padding: EdgeInsets.symmetric(vertical: context.responsive.h(2), horizontal: context.responsive.w(8)),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
@@ -233,7 +234,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         '$value $unit',
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: 11,
+          fontSize: context.responsive.sp(11),
           color: color,
           fontWeight: FontWeight.w500,
         ),
@@ -245,25 +246,25 @@ class _HistoryScreenState extends State<HistoryScreen>
     final data = provider.filteredHistory.reversed.toList();
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsive.w(16)),
       child: Column(
         children: [
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Tren pH',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 13,
+                    fontSize: context.responsive.sp(13),
                     fontWeight: FontWeight.w600,
                     color: AppColors.chartPH,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.responsive.h(12)),
                 SizedBox(
-                  height: 160,
+                  height: context.responsive.h(160),
                   child: SensorLineChart(
                     data: data,
                     sensorType: 'ph',
@@ -273,23 +274,23 @@ class _HistoryScreenState extends State<HistoryScreen>
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.responsive.h(12)),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Tren Kekeruhan (NTU)',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 13,
+                    fontSize: context.responsive.sp(13),
                     fontWeight: FontWeight.w600,
                     color: AppColors.chartTurbidity,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.responsive.h(12)),
                 SizedBox(
-                  height: 160,
+                  height: context.responsive.h(160),
                   child: SensorLineChart(
                     data: data,
                     sensorType: 'turbidity',
@@ -299,23 +300,23 @@ class _HistoryScreenState extends State<HistoryScreen>
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.responsive.h(12)),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Tren Suhu (°C)',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 13,
+                    fontSize: context.responsive.sp(13),
                     fontWeight: FontWeight.w600,
                     color: AppColors.chartTemp,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.responsive.h(12)),
                 SizedBox(
-                  height: 160,
+                  height: context.responsive.h(160),
                   child: SensorLineChart(
                     data: data,
                     sensorType: 'temperature',

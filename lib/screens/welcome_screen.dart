@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../utils/responsive_helper.dart';
 import '../main.dart';
+import '../widgets/sensor_widgets.dart';
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -109,7 +111,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       child: IntrinsicHeight(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.responsive.w(32),
+                            vertical: context.responsive.h(24),
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -120,27 +125,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       position: _slideAnimation,
                       child: FadeTransition(
                         opacity: _fadeAnimation,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.accent.withValues(alpha: 0.3),
-                                blurRadius: 24,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.water_drop_rounded,
-                            size: 40,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: AwesomeWaterLogo(size: context.responsive.w(80)),
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -151,12 +136,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       child: FadeTransition(
                         opacity: _fadeAnimation,
                         child: Text(
-                          'Monitoring\nKualitas Air',
+                          'TirtaSmart',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 40,
+                            fontSize: context.responsive.sp(40),
                             fontWeight: FontWeight.w800,
-                            height: 1.2,
+                            height: 1.1,
                             color: AppColors.textPrimary,
                             shadows: [
                               Shadow(
@@ -180,7 +165,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           'Pantau pH, kekeruhan, dan suhu air secara real-time dengan akurasi tinggi menggunakan analisa Fuzzy Logic Mamdani.',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 15,
+                            fontSize: context.responsive.sp(15),
                             height: 1.5,
                             color: AppColors.textSecondary.withValues(alpha: 0.8),
                           ),
@@ -200,7 +185,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Container(
-                              padding: const EdgeInsets.all(24),
+                              padding: EdgeInsets.all(context.responsive.w(24)),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.03),
                                 borderRadius: BorderRadius.circular(24),
@@ -291,20 +276,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               ),
                               child: Container(
                                 alignment: Alignment.center,
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
                                       'Mulai Monitoring',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: 16,
+                                        fontSize: context.responsive.sp(16),
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,
                                       ),
                                     ),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
                                   ],
                                 ),
                               ),
@@ -359,9 +344,9 @@ class _FeatureItem extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 15,
+                  fontSize: context.responsive.sp(15),
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
@@ -369,9 +354,9 @@ class _FeatureItem extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: context.responsive.sp(13),
                   color: AppColors.textMuted,
                 ),
               ),

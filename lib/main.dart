@@ -11,6 +11,7 @@ import 'screens/settings_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
+import 'widgets/sensor_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +51,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Monitoring Kualitas Air PDAM',
+      title: 'TirtaSmart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: const WelcomeScreen(),
@@ -113,53 +114,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       backgroundColor: AppColors.bgDark,
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.bgGradient),
-        child: Center(
+        child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.3),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.water, size: 56, color: Colors.white),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                'Monitoring Kualitas Air',
+              AwesomeWaterLogo(size: 100),
+              SizedBox(height: 28),
+              Text(
+                'TirtaSmart',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'PDAM · Fuzzy Logic Mamdani',
+              SizedBox(height: 6),
+              Text(
+                'Smart Water Monitoring System',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 13,
                   color: AppColors.textMuted,
                 ),
               ),
-              const SizedBox(height: 40),
-              const CircularProgressIndicator(
+              SizedBox(height: 40),
+              CircularProgressIndicator(
                 color: AppColors.accent,
                 strokeWidth: 3,
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16),
+              Text(
                 'Menginisialisasi sistem...',
                 style: TextStyle(
                   fontFamily: 'Poppins',

@@ -5,6 +5,7 @@ import '../providers/sensor_provider.dart';
 import '../services/fuzzy_mamdani_service.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
+import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
 import '../widgets/chart_widgets.dart';
 
@@ -60,7 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 _buildAppBar(provider, isConnected, isSimulation),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsive.w(16)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -123,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     bool isSimulation,
   ) {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: context.responsive.h(120),
       floating: false,
       pinned: true,
       backgroundColor: AppColors.bgDark,
@@ -138,32 +139,34 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.responsive.w(16),
+                vertical: context.responsive.h(12),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Monitor Kualitas Air',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'PDAM - Sistem Fuzzy Mamdani',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                            ),
+                          Row(
+                            children: [
+                              AwesomeWaterLogo(size: context.responsive.w(32)),
+                              SizedBox(width: context.responsive.w(12)),
+                              Text(
+                                'TirtaSmart',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: context.responsive.sp(22),
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -194,19 +197,20 @@ class _DashboardScreenState extends State<DashboardScreen>
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsive.w(20)),
       borderColor: AppColors.accent.withValues(alpha: 0.2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Kualitas Air Keseluruhan',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 13,
+                    fontSize: context.responsive.sp(13),
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -215,9 +219,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                 const SizedBox(height: 12),
                 Text(
                   fuzzy?.recommendation ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: context.responsive.sp(12),
                     color: AppColors.textMuted,
                     height: 1.4,
                   ),
@@ -272,9 +276,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 14,
+            fontSize: context.responsive.sp(14),
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),

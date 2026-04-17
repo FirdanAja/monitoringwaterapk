@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/sensor_provider.dart';
 import '../utils/app_colors.dart';
+import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -30,21 +31,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              const SliverAppBar(
+              SliverAppBar(
                 pinned: true,
                 backgroundColor: AppColors.bgDark,
                 title: Text(
                   'Pengaturan',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 18,
+                    fontSize: context.responsive.sp(18),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(context.responsive.w(16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -114,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             _infoRow(
                               'Nama Aplikasi',
-                              'Monitoring Kualitas Air PDAM',
+                              'TirtaSmart',
                             ),
                             const Divider(
                               color: AppColors.bgSurface,
@@ -181,9 +182,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 14,
+            fontSize: context.responsive.sp(14),
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
@@ -203,13 +204,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Row(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: context.responsive.w(40),
+          height: context.responsive.w(40),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: color, size: 20),
+          child: Icon(icon, color: color, size: context.responsive.w(20)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -218,18 +219,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: context.responsive.sp(13),
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 11,
+                  fontSize: context.responsive.sp(11),
                   color: AppColors.textMuted,
                 ),
               ),
@@ -254,9 +255,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Text(
           param,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 13,
+            fontSize: context.responsive.sp(13),
             color: AppColors.textSecondary,
           ),
         ),
@@ -270,7 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value,
             style: TextStyle(
                fontFamily: 'Poppins',
-              fontSize: 13,
+              fontSize: context.responsive.sp(13),
               fontWeight: FontWeight.w600,
               color: color,
             ),
@@ -286,17 +287,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
              fontFamily: 'Poppins',
-            fontSize: 12,
+            fontSize: context.responsive.sp(12),
             color: AppColors.textMuted,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
              fontFamily: 'Poppins',
-            fontSize: 12,
+            fontSize: context.responsive.sp(12),
             fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
           ),

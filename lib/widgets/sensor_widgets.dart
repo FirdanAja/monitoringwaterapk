@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../utils/responsive_helper.dart';
 import '../models/sensor_data.dart';
 
 class StatusBadge extends StatelessWidget {
@@ -11,9 +12,9 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
-    final fontSize = large ? 13.0 : 11.0;
-    final vPad = large ? 6.0 : 4.0;
-    final hPad = large ? 14.0 : 10.0;
+    final fontSize = large ? context.responsive.sp(13) : context.responsive.sp(11);
+    final vPad = large ? context.responsive.h(6) : context.responsive.h(4);
+    final hPad = large ? context.responsive.w(14) : context.responsive.w(10);
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: vPad, horizontal: hPad),
@@ -131,7 +132,7 @@ class AnimatedSensorValue extends StatelessWidget {
     );
 
     return GlassCard(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsive.w(20)),
       borderColor: color.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,21 +142,16 @@ class AnimatedSensorValue extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
+                  AwesomeWaterLogo(
+                    size: context.responsive.w(36),
+                    colors: [color.withValues(alpha: 0.8), color],
                   ),
                   const SizedBox(width: 10),
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 13,
+                      fontSize: context.responsive.sp(13),
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -164,9 +160,9 @@ class AnimatedSensorValue extends StatelessWidget {
               ),
               Text(
                 safeRange,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 10,
+                  fontSize: context.responsive.sp(10),
                   color: AppColors.textMuted,
                 ),
               ),
@@ -180,19 +176,19 @@ class AnimatedSensorValue extends StatelessWidget {
                 value,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 32,
+                  fontSize: context.responsive.sp(32),
                   fontWeight: FontWeight.w700,
                   color: color,
                 ),
               ),
               const SizedBox(width: 4),
               Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+                padding: EdgeInsets.only(bottom: context.responsive.h(6)),
                 child: Text(
                   unit,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 14,
+                    fontSize: context.responsive.sp(14),
                     color: color.withValues(alpha: 0.7),
                   ),
                 ),
@@ -243,20 +239,22 @@ class QualityGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
+    final size = context.responsive.w(110); // Reduced from 140 to 110 to fit better
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: 140,
-          height: 140,
+          width: size,
+          height: size,
           child: Stack(
             alignment: Alignment.center,
             children: [
               SizedBox(
-                width: 140,
-                height: 140,
+                width: size,
+                height: size,
                 child: CircularProgressIndicator(
                   value: score / 100,
-                  strokeWidth: 12,
+                  strokeWidth: context.responsive.w(10),
                   backgroundColor: AppColors.bgSurface,
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                   strokeCap: StrokeCap.round,
@@ -269,16 +267,16 @@ class QualityGauge extends StatelessWidget {
                     score.toStringAsFixed(0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 36,
+                      fontSize: context.responsive.sp(28), // Scaled down slightly
                       fontWeight: FontWeight.w700,
                       color: color,
                     ),
                   ),
-                  const Text(
+                  Text(
                     '/100',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 12,
+                      fontSize: context.responsive.sp(10),
                       color: AppColors.textMuted,
                     ),
                   ),
@@ -287,8 +285,6 @@ class QualityGauge extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        StatusBadge(status: status, large: true),
       ],
     );
   }
@@ -349,6 +345,73 @@ class ConnectionStatusChip extends StatelessWidget {
               fontSize: 11,
               color: color,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AwesomeWaterLogo extends StatelessWidget {
+  final double size;
+  final List<Color>? colors;
+
+  const AwesomeWaterLogo({
+    super.key,
+    this.size = 24,
+    this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors ?? [const Color(0xFF00C6FF), const Color(0xFF0072FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(size * 0.3),
+        boxShadow: [
+          BoxShadow(
+            color: (colors?.last ?? const Color(0xFF0072FF)).withValues(alpha: 0.4),
+            blurRadius: size * 0.4,
+            offset: Offset(0, size * 0.15),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Background ripple effect
+          Container(
+            width: size * 0.7,
+            height: size * 0.7,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+          ),
+          // Main Icon
+          Icon(
+            Icons.water_drop_rounded,
+            color: Colors.white,
+            size: size * 0.6,
+          ),
+          // Subtle highlight
+          Positioned(
+            top: size * 0.15,
+            right: size * 0.15,
+            child: Container(
+              width: size * 0.2,
+              height: size * 0.2,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/sensor_provider.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
+import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
 import '../widgets/chart_widgets.dart';
 import 'dart:io';
@@ -54,11 +55,11 @@ class _ReportScreenState extends State<ReportScreen> {
               SliverAppBar(
                 pinned: true,
                 backgroundColor: AppColors.bgDark,
-                title: const Text(
+                title: Text(
                   'Laporan Bulanan',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 18,
+                    fontSize: context.responsive.sp(18),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -73,7 +74,7 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(context.responsive.w(16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -137,11 +138,11 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Pilih Periode Laporan',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 13,
+              fontSize: context.responsive.sp(13),
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
@@ -152,7 +153,7 @@ class _ReportScreenState extends State<ReportScreen> {
               // Year selector
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: EdgeInsets.symmetric(horizontal: context.responsive.w(12)),
                   decoration: BoxDecoration(
                     color: AppColors.bgSurface,
                     borderRadius: BorderRadius.circular(12),
@@ -164,9 +165,9 @@ class _ReportScreenState extends State<ReportScreen> {
                     child: DropdownButton<int>(
                       value: _selectedYear,
                       dropdownColor: AppColors.bgCard,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 13,
+                        fontSize: context.responsive.sp(13),
                         color: AppColors.textPrimary,
                       ),
                       items: List.generate(3, (i) {
@@ -192,7 +193,7 @@ class _ReportScreenState extends State<ReportScreen> {
               Expanded(
                 flex: 2,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: EdgeInsets.symmetric(horizontal: context.responsive.w(12)),
                   decoration: BoxDecoration(
                     color: AppColors.bgSurface,
                     borderRadius: BorderRadius.circular(12),
@@ -205,9 +206,9 @@ class _ReportScreenState extends State<ReportScreen> {
                       value: _selectedMonth,
                       dropdownColor: AppColors.bgCard,
                       isExpanded: true,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 13,
+                        fontSize: context.responsive.sp(13),
                         color: AppColors.textPrimary,
                       ),
                       items: List.generate(12, (i) {
@@ -236,7 +237,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildNoDataCard() {
     return GlassCard(
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: EdgeInsets.symmetric(vertical: context.responsive.h(40)),
       child: Center(
         child: Column(
           children: [
@@ -245,9 +246,9 @@ class _ReportScreenState extends State<ReportScreen> {
             Text(
               'Tidak ada data untuk ${_months[_selectedMonth - 1]} $_selectedYear',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: context.responsive.sp(14),
                 color: AppColors.textMuted,
               ),
             ),
@@ -271,7 +272,7 @@ class _ReportScreenState extends State<ReportScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsive.w(24)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -280,9 +281,9 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Text(
                 '${report.monthName} ${report.year}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 22,
+                  fontSize: context.responsive.sp(22),
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
@@ -290,9 +291,9 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 4),
               Text(
                 '${report.totalReadings} pembacaan sensor',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: context.responsive.sp(13),
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -305,18 +306,18 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Text(
                 report.avgQualityScore.toStringAsFixed(1),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 48,
+                  fontSize: context.responsive.sp(48),
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
-              const Text(
+              Text(
                 'Rata-rata Skor',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 11,
+                  fontSize: context.responsive.sp(11),
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -352,7 +353,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _statCard(String label, int count, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: EdgeInsets.symmetric(vertical: context.responsive.h(12), horizontal: context.responsive.w(8)),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -364,7 +365,7 @@ class _ReportScreenState extends State<ReportScreen> {
             '$count',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 22,
+              fontSize: context.responsive.sp(22),
               fontWeight: FontWeight.w700,
               color: color,
             ),
@@ -373,9 +374,9 @@ class _ReportScreenState extends State<ReportScreen> {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 9,
+              fontSize: context.responsive.sp(9),
               color: AppColors.textMuted,
             ),
           ),
@@ -391,18 +392,18 @@ class _ReportScreenState extends State<ReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'pH Bulanan',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: context.responsive.sp(13),
                   fontWeight: FontWeight.w600,
                   color: AppColors.chartPH,
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 140,
+                height: context.responsive.h(140),
                 child: SensorLineChart(
                   data: report.dailyData,
                   sensorType: 'ph',
@@ -417,18 +418,18 @@ class _ReportScreenState extends State<ReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Kekeruhan Bulanan (NTU)',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: context.responsive.sp(13),
                   fontWeight: FontWeight.w600,
                   color: AppColors.chartTurbidity,
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 140,
+                height: context.responsive.h(140),
                 child: SensorLineChart(
                   data: report.dailyData,
                   sensorType: 'turbidity',
@@ -443,18 +444,18 @@ class _ReportScreenState extends State<ReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Suhu Bulanan (°C)',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: context.responsive.sp(13),
                   fontWeight: FontWeight.w600,
                   color: AppColors.chartTemp,
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 140,
+                height: context.responsive.h(140),
                 child: SensorLineChart(
                   data: report.dailyData,
                   sensorType: 'temperature',
@@ -571,9 +572,9 @@ class _ReportScreenState extends State<ReportScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 14,
+            fontSize: context.responsive.sp(14),
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
