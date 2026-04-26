@@ -65,35 +65,26 @@ class _DashboardScreenState extends State<DashboardScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Status utama
                         if (data != null) ...[
                           _buildMainQualityCard(data, fuzzy),
                           const SizedBox(height: 16),
                         ] else
                           _buildLoadingCard(),
-
-                        // Sensor cards
                         const SizedBox(height: 4),
                         _buildSectionTitle('Pembacaan Sensor Real-Time'),
                         const SizedBox(height: 12),
                         _buildSensorGrid(data),
                         const SizedBox(height: 16),
-
-                        // Fuzzy detail
                         if (fuzzy != null) ...[
                           _buildSectionTitle('Analisis Fuzzy Mamdani'),
                           const SizedBox(height: 12),
                           _buildFuzzyDetail(fuzzy),
                           const SizedBox(height: 16),
                         ],
-
-                        // Mini chart
                         _buildSectionTitle('Tren 24 Jam Terakhir'),
                         const SizedBox(height: 12),
                         _buildMiniCharts(provider),
                         const SizedBox(height: 16),
-
-                        // Last update
                         if (data != null)
                           Center(
                             child: Text(

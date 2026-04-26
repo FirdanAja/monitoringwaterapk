@@ -153,7 +153,8 @@ class _ReportScreenState extends State<ReportScreen> {
               // Year selector
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: context.responsive.w(12)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: context.responsive.w(12)),
                   decoration: BoxDecoration(
                     color: AppColors.bgSurface,
                     borderRadius: BorderRadius.circular(12),
@@ -193,7 +194,8 @@ class _ReportScreenState extends State<ReportScreen> {
               Expanded(
                 flex: 2,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: context.responsive.w(12)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: context.responsive.w(12)),
                   decoration: BoxDecoration(
                     color: AppColors.bgSurface,
                     borderRadius: BorderRadius.circular(12),
@@ -353,7 +355,9 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _statCard(String label, int count, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: context.responsive.h(12), horizontal: context.responsive.w(8)),
+      padding: EdgeInsets.symmetric(
+          vertical: context.responsive.h(12),
+          horizontal: context.responsive.w(8)),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -602,7 +606,8 @@ class _ReportScreenState extends State<ReportScreen> {
       // Add Data
       for (var data in report.dailyData) {
         sheetObject.appendRow([
-          TextCellValue(DateFormat('yyyy-MM-dd HH:mm:ss').format(data.timestamp)),
+          TextCellValue(
+              DateFormat('yyyy-MM-dd HH:mm:ss').format(data.timestamp)),
           TextCellValue(data.ph.toStringAsFixed(2)),
           TextCellValue(data.turbidity.toStringAsFixed(1)),
           TextCellValue(data.temperature.toStringAsFixed(1)),
@@ -613,8 +618,10 @@ class _ReportScreenState extends State<ReportScreen> {
 
       // Save to temporary file
       var fileBytes = excel.save();
-      if (fileBytes == null) throw Exception("Failed to generate excel file bytes.");
-      
+      if (fileBytes == null) {
+        throw Exception("Failed to generate excel file bytes.");
+      }
+
       // Request Storage Permission just in case
       if (Platform.isAndroid) {
         var status = await Permission.storage.status;
@@ -628,21 +635,23 @@ class _ReportScreenState extends State<ReportScreen> {
       if (Platform.isAndroid) {
         Directory downloadDir = Directory('/storage/emulated/0/Download');
         if (!await downloadDir.exists()) {
-          downloadDir = await getExternalStorageDirectory() ?? Directory('/storage/emulated/0/Download');
+          downloadDir = await getExternalStorageDirectory() ??
+              Directory('/storage/emulated/0/Download');
         }
         filePath = '${downloadDir.path}/Laporan_Kualitas_Air_$timestamp.xlsx';
       } else {
         final directory = await getApplicationDocumentsDirectory();
         filePath = '${directory.path}/Laporan_Kualitas_Air_$timestamp.xlsx';
       }
-      
+
       final file = File(filePath);
       await file.writeAsBytes(fileBytes);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Berhasil mengunduh Laporan!\nTersimpan di:\n$filePath'),
+            content:
+                Text('Berhasil mengunduh Laporan!\nTersimpan di:\n$filePath'),
             duration: const Duration(seconds: 5),
             backgroundColor: AppColors.good,
             action: SnackBarAction(

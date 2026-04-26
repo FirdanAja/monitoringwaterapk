@@ -131,7 +131,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppColors.bgSurface,
                               height: 20,
                             ),
-                            _infoRow('Protokol IoT', 'Firebase Realtime Database'),
+                            _infoRow(
+                                'Protokol IoT', 'Firebase Realtime Database'),
                             const Divider(
                               color: AppColors.bgSurface,
                               height: 20,
@@ -270,7 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Text(
             value,
             style: TextStyle(
-               fontFamily: 'Poppins',
+              fontFamily: 'Poppins',
               fontSize: context.responsive.sp(13),
               fontWeight: FontWeight.w600,
               color: color,
@@ -288,7 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           label,
           style: TextStyle(
-             fontFamily: 'Poppins',
+            fontFamily: 'Poppins',
             fontSize: context.responsive.sp(12),
             color: AppColors.textMuted,
           ),
@@ -296,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           value,
           style: TextStyle(
-             fontFamily: 'Poppins',
+            fontFamily: 'Poppins',
             fontSize: context.responsive.sp(12),
             fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
@@ -348,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Buruk (20-40)',
           'Cukup (40-60)',
           'Baik (60-80)',
-          'Sangat Baik (80-100)', 
+          'Sangat Baik (80-100)',
         ],
       },
       {
@@ -368,7 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 section['title'] as String,
                 style: const TextStyle(
-                   fontFamily: 'Poppins',
+                  fontFamily: 'Poppins',
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.accent,
@@ -392,7 +393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Text(
                         item,
                         style: const TextStyle(
-                           fontFamily: 'Poppins',
+                          fontFamily: 'Poppins',
                           fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
