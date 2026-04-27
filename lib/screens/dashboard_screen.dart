@@ -51,136 +51,125 @@ class _DashboardScreenState extends State<DashboardScreen>
 
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: RefreshIndicator(
-            onRefresh: () async => provider.reconnect(),
-            color: AppColors.accent,
-            backgroundColor: AppColors.bgCard,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                _buildAppBar(provider, isConnected, isSimulation),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(context.responsive.w(16)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (data != null) ...[
-                          _buildMainQualityCard(data, fuzzy),
-                          const SizedBox(height: 16),
-                        ] else
-                          _buildLoadingCard(),
-                        const SizedBox(height: 4),
-                        _buildSectionTitle('Pembacaan Sensor Real-Time'),
-                        const SizedBox(height: 12),
-                        _buildSensorGrid(data),
-                        const SizedBox(height: 16),
-                        if (fuzzy != null) ...[
-                          _buildSectionTitle('Analisis Fuzzy Mamdani'),
+          body: Column(
+            children: [
+              _buildHeader(provider, isConnected, isSimulation),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async => provider.reconnect(),
+                  color: AppColors.accent,
+                  backgroundColor: AppColors.bgCard,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(context.responsive.w(16)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (data != null) ...[
+                            _buildMainQualityCard(data, fuzzy),
+                            const SizedBox(height: 16),
+                          ] else
+                            _buildLoadingCard(),
+                          const SizedBox(height: 4),
+                          _buildSectionTitle('Pembacaan Sensor Real-Time'),
                           const SizedBox(height: 12),
-                          _buildFuzzyDetail(fuzzy),
+                          _buildSensorGrid(data),
                           const SizedBox(height: 16),
-                        ],
-                        _buildSectionTitle('Tren 24 Jam Terakhir'),
-                        const SizedBox(height: 12),
-                        _buildMiniCharts(provider),
-                        const SizedBox(height: 16),
-                        if (data != null)
-                          Center(
-                            child: Text(
-                              'Diperbarui: ${DateFormat('dd MMM yyyy, HH:mm:ss').format(data.timestamp)}',
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 11,
-                                color: AppColors.textMuted,
+                          if (fuzzy != null) ...[
+                            _buildSectionTitle('Analisis Fuzzy Mamdani'),
+                            const SizedBox(height: 12),
+                            _buildFuzzyDetail(fuzzy),
+                            const SizedBox(height: 16),
+                          ],
+                          _buildSectionTitle('Tren 24 Jam Terakhir'),
+                          const SizedBox(height: 12),
+                          _buildMiniCharts(provider),
+                          const SizedBox(height: 16),
+                          if (data != null)
+                            Center(
+                              child: Text(
+                                'Diperbarui: ${DateFormat('dd MMM yyyy, HH:mm:ss').format(data.timestamp)}',
+                                style: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
                               ),
                             ),
-                          ),
-                        const SizedBox(height: 80),
-                      ],
+                          const SizedBox(height: 100),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildAppBar(
+  Widget _buildHeader(
     SensorProvider provider,
     bool isConnected,
     bool isSimulation,
   ) {
-    return SliverAppBar(
-      expandedHeight: context.responsive.h(120),
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.bgDark,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0A0E1A), Color(0xFF0D1B2E)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.bgDark,
+        gradient: LinearGradient(
+          colors: [Color(0xFF0A0E1A), Color(0xFF0D1B2E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.responsive.w(16),
+            vertical: context.responsive.h(16),
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.responsive.w(16),
-                vertical: context.responsive.h(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Image.asset(
-                                'assets/icons/logo.png',
-                                width: context.responsive.w(48),
-                                height: context.responsive.w(48),
-                              ),
-                              const SizedBox(width: 4),
-                              SizedBox(
-                                width: context.responsive.w(150),
-                                child: Text(
-                                  'Digitalisasi Air untuk Masa Depan',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: context.responsive.sp(12),
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  Image.asset(
+                    'assets/icons/logo.png',
+                    width: context.responsive.w(48),
+                    height: context.responsive.w(48),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: context.responsive.w(180),
+                    child: Text(
+                      'Digitalisasi Air untuk Masa Depan',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: context.responsive.sp(13),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
                       ),
-                      ConnectionStatusChip(
-                        status: isSimulation
-                            ? 'Simulasi'
-                            : isConnected
-                                ? 'Terhubung'
-                                : 'Terputus',
-                        connected: isConnected || isSimulation,
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
+              ConnectionStatusChip(
+                status: isSimulation
+                    ? 'Simulasi'
+                    : isConnected
+                        ? 'Terhubung'
+                        : 'Terputus',
+                connected: isConnected || isSimulation,
+              ),
+            ],
           ),
         ),
       ),

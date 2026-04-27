@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -179,10 +180,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     return Container(
       decoration: BoxDecoration(
         color: AppColors.bgCard,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         border: Border(
           top: BorderSide(
-              color: AppColors.accent.withValues(alpha: 0.1), width: 1),
+            color: AppColors.accent.withValues(alpha: 0.15),
+            width: 1.5,
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -194,7 +197,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
