@@ -1,0 +1,91 @@
+{
+	"_type": "Project",
+	"_id": "AAAAAAFF+h6SjaM2Hec=",
+	"name": "TirtaSmart_Documentation",
+	"ownedElements": [
+		{
+			"_type": "UMLModel",
+			"_id": "AAAAAAFF+qBWK6M3Z8Y=",
+			"_parent": { "$ref": "AAAAAAFF+h6SjaM2Hec=" },
+			"name": "Model",
+			"ownedElements": [
+				{
+					"_type": "UMLUseCaseDiagram",
+					"_id": "DIAGRAM_UC",
+					"_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+					"name": "Use Case Diagram",
+					"ownedViews": [
+						{
+							"_type": "UMLActorView",
+							"_id": "VIEW_PETUGAS",
+							"_parent": { "$ref": "DIAGRAM_UC" },
+							"model": { "$ref": "ACT_PETUGAS" },
+							"subViews": [
+								{ "_type": "UMLNameLabelView", "font": "Arial;13;0", "left": 64, "top": 213, "width": 51.29541015625, "height": 13, "text": "Petugas" }
+							],
+							"font": "Arial;13;0", "left": 64, "top": 152, "width": 51.29541015625, "height": 74
+						},
+						{
+							"_type": "UMLUseCaseView",
+							"_id": "VIEW_UC1",
+							"_parent": { "$ref": "DIAGRAM_UC" },
+							"model": { "$ref": "UC_DASHBOARD" },
+							"font": "Arial;13;0", "left": 256, "top": 80, "width": 200, "height": 40
+						},
+						{
+							"_type": "UMLUseCaseView",
+							"_id": "VIEW_UC2",
+							"_parent": { "$ref": "DIAGRAM_UC" },
+							"model": { "$ref": "UC_HISTORY" },
+							"font": "Arial;13;0", "left": 256, "top": 144, "width": 200, "height": 40
+						},
+						{
+							"_type": "UMLUseCaseView",
+							"_id": "VIEW_UC3",
+							"_parent": { "$ref": "DIAGRAM_UC" },
+							"model": { "$ref": "UC_REPORT" },
+							"font": "Arial;13;0", "left": 256, "top": 208, "width": 200, "height": 40
+						},
+						{
+							"_type": "UMLUseCaseView",
+							"_id": "VIEW_UC4",
+							"_parent": { "$ref": "DIAGRAM_UC" },
+							"model": { "$ref": "UC_THRESHOLD" },
+							"font": "Arial;13;0", "left": 256, "top": 272, "width": 200, "height": 40
+						}
+					]
+				},
+				{
+					"_type": "UMLActor",
+					"_id": "ACT_PETUGAS",
+					"_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+					"name": "Petugas"
+				},
+				{
+					"_type": "UMLUseCase",
+					"_id": "UC_DASHBOARD",
+					"_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+					"name": "Melihat Dashboard Monitoring"
+				},
+				{
+					"_type": "UMLUseCase",
+					"_id": "UC_HISTORY",
+					"_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+					"name": "Melihat Riwayat Data"
+				},
+				{
+					"_type": "UMLUseCase",
+					"_id": "UC_REPORT",
+					"_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+					"name": "Melihat/Download Laporan"
+				},
+				{
+					"_type": "UMLUseCase",
+					"_id": "UC_THRESHOLD",
+					"_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+					"name": "Lihat Ambang Batas Parameter"
+				}
+			]
+		}
+	]
+}
