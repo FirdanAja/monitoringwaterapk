@@ -8,7 +8,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/report_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/welcome_screen.dart';
+import 'screens/splash_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
 
@@ -53,7 +53,12 @@ class MyApp extends StatelessWidget {
       title: 'TirtaSmart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const WelcomeScreen(),
+      // Splash screen is always the first route shown
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/home': (context) => const MainNavigationScreen(),
+      },
     );
   }
 }
@@ -68,7 +73,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
-  bool _initialized = false;
 
   final List<Widget> _screens = const [
     DashboardScreen(),
@@ -80,23 +84,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   @override
   void initState() {
     super.initState();
-    _initializeProvider();
+    // Delay until after first frame to avoid setState-during-build error
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeProvider();
+    });
   }
 
   Future<void> _initializeProvider() async {
     final provider = context.read<SensorProvider>();
     await provider.initialize();
-    if (mounted) {
-      setState(() => _initialized = true);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) {
-      return _buildSplashScreen();
-    }
-
     return Scaffold(
       extendBody: true,
       backgroundColor: AppColors.bgDark,
@@ -124,54 +124,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         ),
       ),
       bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  Widget _buildSplashScreen() {
-    return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.bgGradient),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo
-              Image.asset(
-                'assets/icons/logo.png',
-                width: 120,
-                height: 120,
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'Digitalisasi Air untuk Masa Depan',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 40),
-              const CircularProgressIndicator(
-                color: AppColors.accent,
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Menginisialisasi sistem...',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -242,7 +194,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                fontFamily: 'Poppins',
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? AppColors.accent : AppColors.textMuted,
