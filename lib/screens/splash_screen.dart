@@ -26,7 +26,8 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _glowPulse;
   late Animation<double> _shimmer;
 
-  final List<_Bubble> _bubbles = [];
+  final List<_Bubble> _bubbles = [];      // bubble di zona air
+  final List<_Bubble> _atmoBubbles = [];   // bubble atmosfer full-screen
   final math.Random _random = math.Random(12);
 
   @override
@@ -132,14 +133,28 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _generateBubbles() {
-    for (int i = 0; i < 25; i++) {
+    // Bubble zona air (bawah layar) — lebih besar & opaque
+    for (int i = 0; i < 35; i++) {
       _bubbles.add(_Bubble(
         x: _random.nextDouble(),
-        startY: 0.5 + _random.nextDouble() * 0.5,
-        radius: _random.nextDouble() * 7 + 2,
-        speed: _random.nextDouble() * 0.25 + 0.08,
-        opacity: _random.nextDouble() * 0.4 + 0.1,
+        startY: 0.65 + _random.nextDouble() * 0.35,
+        radius: _random.nextDouble() * 10 + 3,
+        speed: _random.nextDouble() * 0.20 + 0.06,
+        opacity: _random.nextDouble() * 0.55 + 0.25,
         phase: _random.nextDouble(),
+        wobble: _random.nextDouble() * 0.04 + 0.01,
+      ));
+    }
+    // Bubble atmosfer (naik dari bawah ke atas layar) — kecil & halus
+    for (int i = 0; i < 20; i++) {
+      _atmoBubbles.add(_Bubble(
+        x: _random.nextDouble(),
+        startY: 0.2 + _random.nextDouble() * 0.8,
+        radius: _random.nextDouble() * 4 + 1,
+        speed: _random.nextDouble() * 0.12 + 0.04,
+        opacity: _random.nextDouble() * 0.25 + 0.08,
+        phase: _random.nextDouble(),
+        wobble: _random.nextDouble() * 0.02 + 0.005,
       ));
     }
   }
@@ -227,6 +242,7 @@ class _SplashScreenState extends State<SplashScreen>
             builder: (_, __) => CustomPaint(
               painter: _BubblePainter(
                 bubbles: _bubbles,
+                atmoBubbles: _atmoBubbles,
                 progress: _bubbleController.value,
               ),
             ),
@@ -421,7 +437,7 @@ class _SplashScreenState extends State<SplashScreen>
                         style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF4A6572),
+                          color: Color(0xFF80B8D4),
                           letterSpacing: 2.5,
                         ),
                       ),
@@ -487,7 +503,7 @@ class _SplashScreenState extends State<SplashScreen>
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF4A6572),
+                            color: Color(0xFF7BBDD8),
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -495,7 +511,7 @@ class _SplashScreenState extends State<SplashScreen>
                         const SizedBox(height: 28),
 
                         const Text(
-                          'v1.0.0  •  Powered by PDAM',
+                          'v1.0.0  •  firdanfauzan_',
                           style: TextStyle(
                             fontSize: 9,
                             color: Color(0xFF243040),
@@ -526,6 +542,7 @@ class _Bubble {
   final double speed;
   final double opacity;
   final double phase;
+  final double wobble; // amplitude goyang horizontal
 
   const _Bubble({
     required this.x,
@@ -534,6 +551,7 @@ class _Bubble {
     required this.speed,
     required this.opacity,
     required this.phase,
+    this.wobble = 0.02,
   });
 }
 
@@ -585,25 +603,25 @@ class _WaterFillPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final maxFill = size.height * 0.48;
+    final maxFill = size.height * 0.30;
     final fill = maxFill * fillProgress;
     final baseY = size.height - fill;
 
     _wave(canvas, size, baseY + 10,
         h: 20, freq: 1.2, spd: waveProgress,
-        color: const Color(0xFF0A2A52).withValues(alpha: 0.7));
+        color: const Color(0xFF020C1A).withValues(alpha: 0.95));
 
     _wave(canvas, size, baseY + 2,
         h: 15, freq: 0.85, spd: waveProgress * 0.75 + 0.25,
-        color: const Color(0xFF0D3B75).withValues(alpha: 0.65));
+        color: const Color(0xFF051830).withValues(alpha: 0.92));
 
     _wave(canvas, size, baseY - 6,
         h: 11, freq: 1.55, spd: waveProgress * 1.3,
-        color: const Color(0xFF0288D1).withValues(alpha: 0.5));
+        color: const Color(0xFF083060).withValues(alpha: 0.88));
 
     _wave(canvas, size, baseY - 12,
         h: 8, freq: 2.0, spd: waveProgress * 0.6 + 0.4,
-        color: const Color(0xFF00BCD4).withValues(alpha: 0.3));
+        color: const Color(0xFF0A4080).withValues(alpha: 0.75));
   }
 
   void _wave(Canvas canvas, Size size, double yBase,
@@ -634,34 +652,114 @@ class _WaterFillPainter extends CustomPainter {
 
 class _BubblePainter extends CustomPainter {
   final List<_Bubble> bubbles;
+  final List<_Bubble> atmoBubbles;
   final double progress;
 
-  const _BubblePainter({required this.bubbles, required this.progress});
+  const _BubblePainter({
+    required this.bubbles,
+    required this.atmoBubbles,
+    required this.progress,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.0;
-    final fill = Paint()..style = PaintingStyle.fill;
+    _drawWaterBubbles(canvas, size);
+    _drawAtmoBubbles(canvas, size);
+  }
+
+  /// Gelembung zona air — besar, glowing, wobble
+  void _drawWaterBubbles(Canvas canvas, Size size) {
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    final glow = Paint()
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final highlight = Paint()..style = PaintingStyle.fill;
 
     for (final b in bubbles) {
-      final y = ((b.startY - progress * b.speed * 1.5 + b.phase) % 1.0);
-      if (y < 0.48) continue; // only in water area
+      final rawY = (b.startY - progress * b.speed * 2.0 + b.phase) % 1.0;
+      if (rawY < 0.68) continue; // hanya di zona air
 
-      final px = b.x * size.width;
-      final py = y * size.height;
-      final fade = ((y - 0.48) / 0.52).clamp(0.0, 1.0) * b.opacity;
+      // Goyang horizontal sinusoidal
+      final wobbleX = math.sin(
+              (progress * 2 * math.pi * 3) + b.phase * 2 * math.pi) *
+          b.wobble *
+          size.width;
+      final px = (b.x * size.width + wobbleX).clamp(b.radius, size.width - b.radius);
+      final py = rawY * size.height;
 
-      stroke.color =
-          const Color(0xFF4DD0E1).withValues(alpha: (fade * 0.6).clamp(0, 1));
+      // Fade masuk dari bawah, fade keluar mendekati permukaan air
+      final fadeIn  = ((rawY - 0.68) / 0.07).clamp(0.0, 1.0);
+      final fadeOut = (1.0 - ((rawY - 0.92) / 0.08).clamp(0.0, 1.0));
+      final alpha   = fadeIn * fadeOut * b.opacity;
+      if (alpha <= 0) continue;
+
+      // Glow biru cyan di balik bubble
+      glow.color = const Color(0xFF00E5FF).withValues(alpha: (alpha * 0.25).clamp(0, 1));
+      canvas.drawCircle(Offset(px, py), b.radius * 1.6, glow);
+
+      // Outline bubble
+      stroke.color = const Color(0xFF80DEEA).withValues(alpha: (alpha * 0.75).clamp(0, 1));
       canvas.drawCircle(Offset(px, py), b.radius, stroke);
 
-      // Highlight
-      fill.color =
-          Colors.white.withValues(alpha: (fade * 0.15).clamp(0, 1));
+      // Inner fill transparan
+      highlight.color = const Color(0xFF00BCD4).withValues(alpha: (alpha * 0.08).clamp(0, 1));
+      canvas.drawCircle(Offset(px, py), b.radius, highlight);
+
+      // Highlight putih kecil (refleksi cahaya)
+      highlight.color = Colors.white.withValues(alpha: (alpha * 0.6).clamp(0, 1));
+      canvas.drawCircle(
+        Offset(px - b.radius * 0.30, py - b.radius * 0.30),
+        b.radius * 0.25,
+        highlight,
+      );
+
+      // Highlight sekunder (kanan bawah, lebih kecil)
+      highlight.color = Colors.white.withValues(alpha: (alpha * 0.20).clamp(0, 1));
+      canvas.drawCircle(
+        Offset(px + b.radius * 0.35, py + b.radius * 0.25),
+        b.radius * 0.12,
+        highlight,
+      );
+    }
+  }
+
+  /// Gelembung atmosfer — kecil, naik pelan di seluruh layar
+  void _drawAtmoBubbles(Canvas canvas, Size size) {
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    final highlight = Paint()..style = PaintingStyle.fill;
+
+    for (final b in atmoBubbles) {
+      final rawY = (b.startY - progress * b.speed * 1.2 + b.phase) % 1.0;
+
+      final wobbleX = math.sin(
+              (progress * 2 * math.pi * 2) + b.phase * 2 * math.pi) *
+          b.wobble *
+          size.width;
+      final px = (b.x * size.width + wobbleX).clamp(b.radius, size.width - b.radius);
+      final py = rawY * size.height;
+
+      // Fade di tepi atas & bawah layar
+      final fadeEdge = (rawY < 0.1
+              ? rawY / 0.1
+              : rawY > 0.9
+                  ? (1.0 - rawY) / 0.1
+                  : 1.0)
+          .clamp(0.0, 1.0);
+      final alpha = fadeEdge * b.opacity;
+      if (alpha <= 0) continue;
+
+      stroke.color = const Color(0xFF4DD0E1).withValues(alpha: (alpha * 0.55).clamp(0, 1));
+      canvas.drawCircle(Offset(px, py), b.radius, stroke);
+
+      highlight.color = Colors.white.withValues(alpha: (alpha * 0.35).clamp(0, 1));
       canvas.drawCircle(
         Offset(px - b.radius * 0.28, py - b.radius * 0.28),
-        b.radius * 0.3,
-        fill,
+        b.radius * 0.28,
+        highlight,
       );
     }
   }
