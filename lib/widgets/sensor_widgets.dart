@@ -239,66 +239,94 @@ class QualityGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
-    final size = context.responsive.w(110); // Reduced from 140 to 110 to fit better
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: Stack(
-            alignment: Alignment.center,
+    final size = context.responsive.w(120); // Increased size slightly for better visibility
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer Ring Glow
+          Container(
+            width: size * 0.9,
+            height: size * 0.9,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+          ),
+          // Main Progress Ring
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: score / 100),
+            duration: const Duration(milliseconds: 1500),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) => SizedBox(
+              width: size * 0.85,
+              height: size * 0.85,
+              child: CircularProgressIndicator(
+                value: value,
+                strokeWidth: 8,
+                backgroundColor: AppColors.bgSurface,
+                color: color,
+                strokeCap: StrokeCap.round,
+              ),
+            ),
+          ),
+          // Inner Ring (Decorative)
+          Container(
+            width: size * 0.7,
+            height: size * 0.7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+          ),
+          // Score Text
+          Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: size,
-                height: size,
-                child: CircularProgressIndicator(
-                  value: score / 100,
-                  strokeWidth: context.responsive.w(10),
-                  backgroundColor: AppColors.bgSurface,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                  strokeCap: StrokeCap.round,
+              Text(
+                '${score.toInt()}',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(22),
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
                 ),
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    score.toStringAsFixed(0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: context.responsive.sp(28), // Scaled down slightly
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                  Text(
-                    '/100',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: context.responsive.sp(10),
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+              Text(
+                'Quality Score',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(9),
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Color _getColor() {
     switch (status) {
-      case WaterQualityStatus.drinkable:
-        return AppColors.good;
-      case WaterQualityStatus.usable:
-        return AppColors.warning;
-      case WaterQualityStatus.notDrinkable:
-        return AppColors.danger;
-      case WaterQualityStatus.unknown:
-        return AppColors.textMuted;
+      case WaterQualityStatus.drinkable: return AppColors.good;
+      case WaterQualityStatus.usable: return AppColors.warning;
+      case WaterQualityStatus.notDrinkable: return AppColors.danger;
+      default: return AppColors.textMuted;
     }
   }
 }
@@ -356,11 +384,13 @@ class ConnectionStatusChip extends StatelessWidget {
 class AwesomeWaterLogo extends StatelessWidget {
   final double size;
   final List<Color>? colors;
+  final IconData? icon;
 
   const AwesomeWaterLogo({
     super.key,
     this.size = 24,
     this.colors,
+    this.icon,
   });
 
   @override
@@ -397,7 +427,7 @@ class AwesomeWaterLogo extends StatelessWidget {
           ),
           // Main Icon
           Icon(
-            Icons.water_drop_rounded,
+            icon ?? Icons.water_drop_rounded,
             color: Colors.white,
             size: size * 0.6,
           ),

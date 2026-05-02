@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:open_filex/open_filex.dart';
 import '../models/sensor_data.dart';
 
 class NotificationService {
@@ -58,8 +59,13 @@ class NotificationService {
     _isInitialized = true;
   }
 
-  void _onNotificationTapped(NotificationResponse response) {
-    // Handle tap - bisa navigasi ke halaman tertentu
+  void _onNotificationTapped(NotificationResponse response) async {
+    debugPrint('Notification tapped with payload: ${response.payload}');
+    if (response.payload != null && response.payload!.endsWith('.xlsx')) {
+      debugPrint('Attempting to open Excel file: ${response.payload}');
+      final result = await OpenFilex.open(response.payload!);
+      debugPrint('Open file result: ${result.message} (Type: ${result.type})');
+    }
   }
 
   /// Kirim notifikasi berdasarkan hasil fuzzy logic
@@ -152,6 +158,11 @@ class NotificationService {
       color: _getStatusColor(data.status),
       enableVibration: importance == 'high',
       playSound: importance == 'high',
+      styleInformation: BigTextStyleInformation(
+        body,
+        contentTitle: title,
+        summaryText: 'Detail Kualitas Air',
+      ),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -194,6 +205,43 @@ class NotificationService {
       }
     }
     return true;
+  }
+
+  /// Kirim notifikasi saat file berhasil diunduh
+  Future<void> showFileDownloadedNotification({
+    required String fileName,
+    required String filePath,
+  }) async {
+    if (kIsWeb) return;
+    if (!_isInitialized) await initialize();
+
+    final androidDetails = AndroidNotificationDetails(
+      'file_download_channel',
+      'Unduhan File',
+      channelDescription: 'Notifikasi unduhan laporan excel',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      color: const Color(0xFF00C6FF),
+      styleInformation: BigTextStyleInformation(
+        'Laporan $fileName siap dibuka. Klik untuk melihat detail kualitas air.',
+        contentTitle: '✅ Laporan Berhasil Diunduh',
+      ),
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    await _flutterLocalNotificationsPlugin.show(
+      2001,
+      '✅ Laporan Berhasil Diunduh',
+      'File $fileName telah tersimpan di folder Download.',
+      NotificationDetails(android: androidDetails, iOS: iosDetails),
+      payload: filePath,
+    );
   }
 
   /// Batalkan semua notifikasi

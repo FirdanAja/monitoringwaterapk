@@ -16,10 +16,18 @@ class Responsive {
   bool get isWideScreen => width > 600;
 
   // Scale value based on screen width (standard mobile width baseline: 375)
-  double w(double size) => (width / 375) * size;
+  double w(double size) {
+    double scale = width / 375;
+    if (scale > 1.2) scale = 1.2; // Limit scaling
+    return scale * size;
+  }
 
   // Scale value based on screen height (standard mobile height baseline: 812)
-  double h(double size) => (height / 812) * size;
+  double h(double size) {
+    double scale = height / 812;
+    if (scale > 1.2) scale = 1.2; // Limit scaling
+    return scale * size;
+  }
 
   // Font scale baseline
   double sp(double size) {

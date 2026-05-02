@@ -26,146 +26,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Consumer<SensorProvider>(
       builder: (context, provider, _) {
+        final res = context.responsive;
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: AppColors.bgDark,
-                title: Text(
-                  'Pengaturan',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: context.responsive.sp(18),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+          body: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: res.w(16),
+                vertical: res.h(8),
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(context.responsive.w(16)),
-                  child: Column(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  SizedBox(height: res.h(16)),
+                  
+                  // Top Row: Notifications & Standards
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Notifikasi
-                      _buildSectionHeader('Notifikasi'),
-                      const SizedBox(height: 12),
-                      GlassCard(
-                        child: Column(
-                          children: [
-                            _buildSwitchTile(
-                              title: 'Push Notification',
-                              subtitle:
-                                  'Terima peringatan saat kualitas air buruk',
-                              value: _notifEnabled,
-                              onChanged: (v) {
-                                setState(() => _notifEnabled = v);
-                                provider.updateSettings(notifications: v);
-                              },
-                              icon: Icons.notifications_active,
-                              color: AppColors.accent,
-                            ),
-                          ],
-                        ),
+                      Expanded(
+                        flex: 4,
+                        child: _buildNotificationCard(provider),
                       ),
-                      const SizedBox(height: 20),
-
-                      // Standar Kualitas Air
-                      _buildSectionHeader('Standar Kualitas Air (WHO/PDAM)'),
-                      const SizedBox(height: 12),
-                      GlassCard(
-                        child: Column(
-                          children: [
-                            _buildStandardRow(
-                              'pH',
-                              '6.5 - 8.5',
-                              AppColors.chartPH,
-                            ),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 24,
-                            ),
-                            _buildStandardRow(
-                              'Kekeruhan',
-                              '< 5 NTU',
-                              AppColors.chartTurbidity,
-                            ),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 24,
-                            ),
-                            _buildStandardRow(
-                              'Suhu',
-                              '10 - 30°C',
-                              AppColors.chartTemp,
-                            ),
-                          ],
-                        ),
+                      SizedBox(width: res.w(12)),
+                      Expanded(
+                        flex: 5,
+                        child: _buildStandardsCard(),
                       ),
-                      const SizedBox(height: 20),
-
-                      // Informasi Aplikasi
-                      _buildSectionHeader('Informasi Aplikasi'),
-                      const SizedBox(height: 12),
-                      GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoRow(
-                              'Nama Aplikasi',
-                              'TirtaSmart',
-                            ),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 20,
-                            ),
-                            _infoRow('Versi', '1.0.0'),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 20,
-                            ),
-                            _infoRow('Metode Analisis', 'Fuzzy Logic Mamdani'),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 20,
-                            ),
-                            _infoRow(
-                                'Protokol IoT', 'Firebase Realtime Database'),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 20,
-                            ),
-                            _infoRow('Platform Hardware', 'ESP8266'),
-                            const Divider(
-                              color: AppColors.bgSurface,
-                              height: 20,
-                            ),
-                            _infoRow('Sensor', 'pH, Turbidity, Temperature'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Fuzzy Logic Info
-                      _buildSectionHeader('Konfigurasi Fuzzy Mamdani'),
-                      const SizedBox(height: 12),
-                      GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [_buildFuzzyInfo()],
-                        ),
-                      ),
-                      const SizedBox(height: 80),
                     ],
                   ),
-                ),
+                  
+                  SizedBox(height: res.h(16)),
+                  
+                  // Middle: App Info
+                  _buildSectionHeader('Informasi Aplikasi'),
+                  SizedBox(height: res.h(8)),
+                  _buildAppInfoCard(),
+                  
+                  SizedBox(height: res.h(16)),
+                  
+                  // Bottom: Fuzzy Configuration (Compact)
+                  _buildSectionHeader('Konfigurasi Fuzzy Mamdani'),
+                  SizedBox(height: res.h(8)),
+                  Expanded(
+                    child: _buildFuzzyConfigCard(),
+                  ),
+                  
+                  SizedBox(height: res.h(12)),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        const AwesomeWaterLogo(size: 32, icon: Icons.settings_rounded),
+        const SizedBox(width: 12),
+        Text(
+          'Pengaturan',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: context.responsive.sp(20),
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -174,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Container(
           width: 3,
-          height: 16,
+          height: 14,
           decoration: BoxDecoration(
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(2),
@@ -185,104 +117,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(14),
+            fontSize: context.responsive.sp(13),
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: AppColors.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSwitchTile({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: context.responsive.w(40),
-          height: context.responsive.w(40),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: color, size: context.responsive.w(20)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildNotificationCard(SensorProvider provider) {
+    return GlassCard(
+      padding: EdgeInsets.all(context.responsive.w(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: context.responsive.sp(13),
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              Icon(Icons.notifications_active, 
+                color: AppColors.accent, 
+                size: context.responsive.w(20)
               ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: context.responsive.sp(11),
-                  color: AppColors.textMuted,
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: _notifEnabled,
+                  onChanged: (v) {
+                    setState(() => _notifEnabled = v);
+                    provider.updateSettings(notifications: v);
+                  },
+                  activeThumbColor: AppColors.accent,
+                  activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
                 ),
               ),
             ],
           ),
-        ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: AppColors.accent,
-          activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
-          inactiveThumbColor: AppColors.textMuted,
-          inactiveTrackColor: AppColors.bgSurface,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStandardRow(String param, String value, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          param,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(13),
-            color: AppColors.textSecondary,
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            value,
+          SizedBox(height: context.responsive.h(4)),
+          Text(
+            'Push Notification',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: context.responsive.sp(13),
+              fontSize: context.responsive.sp(12),
               fontWeight: FontWeight.w600,
-              color: color,
+              color: AppColors.textPrimary,
             ),
           ),
-        ),
-      ],
+          Text(
+            'Alert kualitas air',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: context.responsive.sp(10),
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _buildStandardsCard() {
+    return GlassCard(
+      padding: EdgeInsets.all(context.responsive.w(12)),
+      child: Column(
+        children: [
+          _buildCompactStandard('pH', '6.5-8.5', AppColors.chartPH),
+          const Divider(color: Colors.white10, height: 12),
+          _buildCompactStandard('Kekeruhan', '<5 NTU', AppColors.chartTurbidity),
+          const Divider(color: Colors.white10, height: 12),
+          _buildCompactStandard('Suhu', '10-30°C', AppColors.chartTemp),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactStandard(String label, String value, Color color) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -290,123 +199,155 @@ class _SettingsScreenState extends State<SettingsScreen> {
           label,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(12),
-            color: AppColors.textMuted,
+            fontSize: context.responsive.sp(11),
+            color: AppColors.textSecondary,
           ),
         ),
         Text(
           value,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(12),
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+            fontSize: context.responsive.sp(11),
+            fontWeight: FontWeight.w600,
+            color: color,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFuzzyInfo() {
-    final items = [
+  Widget _buildAppInfoCard() {
+    final info = [
+      {'label': 'App Name', 'value': 'TirtaSmart'},
+      {'label': 'Version', 'value': '1.0.0'},
+      {'label': 'Hardware', 'value': 'ESP8266'},
+      {'label': 'Protocol', 'value': 'Firebase'},
+      {'label': 'Method', 'value': 'Fuzzy Logic'},
+      {'label': 'Sensors', 'value': '3 Sensors'},
+    ];
+
+    return GlassCard(
+      padding: EdgeInsets.all(context.responsive.w(12)),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 2.2,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+        ),
+        itemCount: info.length,
+        itemBuilder: (context, index) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                info[index]['label']!,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(9),
+                  color: AppColors.textMuted,
+                ),
+              ),
+              Text(
+                info[index]['value']!,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(11),
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFuzzyConfigCard() {
+    final fuzzyData = [
       {
-        'title': 'Variabel Input',
-        'items': ['pH (0-14)', 'Turbidity (0-20 NTU)', 'Suhu (0-50°C)'],
+        'title': 'Input Variable',
+        'items': ['pH (0-14)', 'Turb (0-20)', 'Temp (0-50)'],
       },
       {
-        'title': 'Himpunan Fuzzy pH',
-        'items': [
-          'Sangat Asam (<4)',
-          'Asam (5.5-7)',
-          'Normal (6.5-8.5)',
-          'Basa (7.5-9.5)',
-          'Sangat Basa (>8.5)',
-        ],
+        'title': 'Output Level',
+        'items': ['S.Buruk', 'Buruk', 'Cukup', 'Baik', 'S.Baik'],
       },
       {
-        'title': 'Himpunan Fuzzy Kekeruhan',
-        'items': [
-          'Jernih (<3 NTU)',
-          'Agak Keruh (1-7 NTU)',
-          'Keruh (5-15 NTU)',
-          'S.Keruh (>10 NTU)',
-        ],
+        'title': 'pH Sets',
+        'items': ['S.Asam', 'Asam', 'Normal', 'Basa', 'S.Basa'],
       },
       {
-        'title': 'Himpunan Fuzzy Suhu',
-        'items': [
-          'S.Dingin (<15°C)',
-          'Dingin (10-22°C)',
-          'Normal (18-28°C)',
-          'Hangat (25-33°C)',
-          'Panas (>28°C)',
-        ],
+        'title': 'Turb Sets',
+        'items': ['Jernih', 'Agak Keruh', 'Keruh', 'S.Keruh'],
       },
       {
-        'title': 'Output Fuzzy',
-        'items': [
-          'Sangat Buruk (0-20)',
-          'Buruk (20-40)',
-          'Cukup (40-60)',
-          'Baik (60-80)',
-          'Sangat Baik (80-100)',
-        ],
+        'title': 'Temp Sets',
+        'items': ['S.Dingin', 'Dingin', 'Normal', 'Hangat', 'Panas'],
       },
       {
-        'title': 'Defuzzifikasi',
-        'items': ['Metode Centroid (Center of Gravity)'],
+        'title': 'Method',
+        'items': ['Centroid / COG'],
       },
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: items.map((section) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
+    return GlassCard(
+      padding: EdgeInsets.all(context.responsive.w(12)),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 2.5,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: fuzzyData.length,
+        itemBuilder: (context, index) {
+          final section = fuzzyData[index];
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 section['title'] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontSize: context.responsive.sp(10),
+                  fontWeight: FontWeight.w700,
                   color: AppColors.accent,
                 ),
               ),
               const SizedBox(height: 4),
-              ...(section['items'] as List<String>).map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 2),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: AppColors.textMuted,
-                          shape: BoxShape.circle,
-                        ),
+              Expanded(
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 0,
+                  children: (section['items'] as List<String>).map((item) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
+                      child: Text(
                         item,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 11,
+                          fontSize: context.responsive.sp(8.5),
                           color: AppColors.textSecondary,
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ),
     );
   }
 }
-// Force VS Code reload event 1

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
 
@@ -379,3 +380,144 @@ class QualityBarChart extends StatelessWidget {
     );
   }
 }
+
+class SensorBarChart extends StatelessWidget {
+  final List<SensorData> data;
+  final String sensorType;
+  final int maxPoints;
+
+  const SensorBarChart({
+    super.key,
+    required this.data,
+    required this.sensorType,
+    this.maxPoints = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final displayData = data.length > maxPoints
+        ? data.sublist(data.length - maxPoints)
+        : data;
+
+    if (displayData.isEmpty) {
+      return const Center(
+        child: Text(
+          'Menunggu data...',
+          style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    final color = _getColor();
+    final maxY = _getMaxY();
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: maxY,
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => AppColors.bgCardLight,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${rod.toY.toStringAsFixed(1)} ${_getUnit()}',
+                TextStyle(fontFamily: 'Poppins', color: color, fontWeight: FontWeight.bold),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() >= displayData.length) return const SizedBox();
+                final d = displayData[value.toInt()];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    DateFormat('HH:mm').format(d.timestamp),
+                    style: const TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 8),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) => Text(
+                value.toStringAsFixed(0),
+                style: const TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 9),
+              ),
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: maxY / 4,
+          getDrawingHorizontalLine: (v) => FlLine(color: AppColors.textMuted.withValues(alpha: 0.1), strokeWidth: 1),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: displayData.asMap().entries.map((e) {
+          return BarChartGroupData(
+            x: e.key,
+            barRods: [
+              BarChartRodData(
+                toY: _getValue(e.value),
+                gradient: LinearGradient(
+                  colors: [color.withValues(alpha: 0.5), color],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+                width: 12,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  double _getValue(SensorData d) {
+    switch (sensorType) {
+      case 'ph': return d.ph;
+      case 'turbidity': return d.turbidity;
+      case 'temperature': return d.temperature;
+      default: return 0;
+    }
+  }
+
+  Color _getColor() {
+    switch (sensorType) {
+      case 'ph': return AppColors.chartPH;
+      case 'turbidity': return AppColors.chartTurbidity;
+      case 'temperature': return AppColors.chartTemp;
+      default: return AppColors.accent;
+    }
+  }
+
+  String _getUnit() {
+    switch (sensorType) {
+      case 'ph': return '';
+      case 'turbidity': return 'NTU';
+      case 'temperature': return '°C';
+      default: return '';
+    }
+  }
+
+  double _getMaxY() {
+    switch (sensorType) {
+      case 'ph': return 14;
+      case 'turbidity': return 20;
+      case 'temperature': return 50;
+      default: return 100;
+    }
+  }
+}
+

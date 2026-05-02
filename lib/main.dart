@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,6 +12,7 @@ import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Inisialisasi Notifikasi
+  await NotificationService().initialize();
 
   // Lock orientation portrait
   await SystemChrome.setPreferredOrientations([
@@ -53,7 +58,6 @@ class MyApp extends StatelessWidget {
       title: 'TirtaSmart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      // Splash screen is always the first route shown
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
@@ -84,7 +88,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   @override
   void initState() {
     super.initState();
-    // Delay until after first frame to avoid setState-during-build error
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeProvider();
     });
@@ -129,34 +132,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   Widget _buildBottomNav() {
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border(
-          top: BorderSide(
-            color: AppColors.accent.withValues(alpha: 0.15),
-            width: 1.5,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard'),
-              _buildNavItem(1, Icons.history_rounded, 'Riwayat'),
-              _buildNavItem(2, Icons.assessment_rounded, 'Laporan'),
-              _buildNavItem(3, Icons.settings_rounded, 'Pengaturan'),
-            ],
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4), // Even lower (lebih pepet bawah)
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161B22).withValues(alpha: 0.75), // Slightly darker for better contrast
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+                width: 0.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 25,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.dashboard_rounded, 'Beranda'),
+                _buildNavItem(1, Icons.history_rounded, 'Riwayat'),
+                _buildNavItem(2, Icons.assessment_rounded, 'Laporan'),
+                _buildNavItem(3, Icons.settings_rounded, 'Pengaturan'),
+              ],
+            ),
           ),
         ),
       ),
@@ -166,39 +172,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        if (_currentIndex != index) {
+          HapticFeedback.lightImpact();
+          setState(() => _currentIndex = index);
+        }
+      },
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.accent.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedScale(
-              scale: isSelected ? 1.1 : 1.0,
-              duration: const Duration(milliseconds: 200),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutBack,
+              padding: EdgeInsets.all(isSelected ? 10 : 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.accent.withValues(alpha: 0.2) : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Icon(
                 icon,
                 color: isSelected ? AppColors.accent : AppColors.textMuted,
-                size: 24,
+                size: isSelected ? 22 : 20,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 300),
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                fontFamily: 'Poppins',
+                fontSize: 9,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                 color: isSelected ? AppColors.accent : AppColors.textMuted,
               ),
               child: Text(label),
+            ),
+            // Active dot indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.only(top: 2),
+              height: 3,
+              width: isSelected ? 12 : 0,
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: [
+                  BoxShadow(color: AppColors.accent.withValues(alpha: 0.5), blurRadius: 4),
+                ],
+              ),
             ),
           ],
         ),

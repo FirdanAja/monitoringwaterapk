@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../providers/sensor_provider.dart';
 import '../services/fuzzy_mamdani_service.dart';
 import '../models/sensor_data.dart';
@@ -20,6 +19,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
+  int _selectedChart = 0;
+  int _selectedChartStyle = 0; // 0 for Line, 1 for Bar
 
   @override
   void initState() {
@@ -28,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _pulseAnim = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
@@ -50,60 +51,32 @@ class _DashboardScreenState extends State<DashboardScreen>
         const isSimulation = false;
 
         return Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Column(
+          backgroundColor: AppColors.bgDark,
+          body: Stack(
             children: [
-              _buildHeader(provider, isConnected, isSimulation),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async => provider.reconnect(),
-                  color: AppColors.accent,
-                  backgroundColor: AppColors.bgCard,
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
+              _buildDecorativeBackground(),
+              SafeArea(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          context.responsive.w(16),
+                          context.responsive.w(16),
+                          context.responsive.w(16),
+                          8),
+                      child: _buildHeader(provider, isConnected, isSimulation),
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.all(context.responsive.w(16)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (data != null) ...[
-                            _buildMainQualityCard(data, fuzzy),
-                            const SizedBox(height: 16),
-                          ] else
-                            _buildLoadingCard(),
-                          const SizedBox(height: 4),
-                          _buildSectionTitle('Pembacaan Sensor Real-Time'),
-                          const SizedBox(height: 12),
-                          _buildSensorGrid(data),
-                          const SizedBox(height: 16),
-                          if (fuzzy != null) ...[
-                            _buildSectionTitle('Analisis Fuzzy Mamdani'),
-                            const SizedBox(height: 12),
-                            _buildFuzzyDetail(fuzzy),
-                            const SizedBox(height: 16),
-                          ],
-                          _buildSectionTitle('Tren 24 Jam Terakhir'),
-                          const SizedBox(height: 12),
-                          _buildMiniCharts(provider),
-                          const SizedBox(height: 16),
-                          if (data != null)
-                            Center(
-                              child: Text(
-                                'Diperbarui: ${DateFormat('dd MMM yyyy, HH:mm:ss').format(data.timestamp)}',
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 11,
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 100),
-                        ],
-                      ),
+                    Expanded(
+                      child: data != null
+                          ? SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: context.responsive.w(16)),
+                              child: _buildContent(data, fuzzy, provider),
+                            )
+                          : _buildLoadingView(),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -113,307 +86,471 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildHeader(
-    SensorProvider provider,
-    bool isConnected,
-    bool isSimulation,
-  ) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.bgDark,
-        gradient: LinearGradient(
-          colors: [Color(0xFF0A0E1A), Color(0xFF0D1B2E)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+  Widget _buildContent(
+      SensorData data, FuzzyResult? fuzzy, SensorProvider provider) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        // Side-by-side Gauge and Sensors
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 5,
+              child: _buildLeftGaugeSection(data, fuzzy),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 4,
+              child: _buildVerticalSensorGrid(data),
+            ),
+          ],
         ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: context.responsive.w(16),
-            vertical: context.responsive.h(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/icons/logo.png',
-                    width: context.responsive.w(48),
-                    height: context.responsive.w(48),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: context.responsive.w(180),
-                    child: Text(
-                      'Digitalisasi Air untuk Masa Depan',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: context.responsive.sp(13),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              ConnectionStatusChip(
-                status: isSimulation
-                    ? 'Simulasi'
-                    : isConnected
-                        ? 'Terhubung'
-                        : 'Terputus',
-                connected: isConnected || isSimulation,
-              ),
-            ],
-          ),
-        ),
-      ),
+        const SizedBox(height: 20),
+        if (fuzzy != null) _buildCompactAnalysis(fuzzy),
+        const SizedBox(height: 20),
+        _buildInteractiveCharts(provider),
+        const SizedBox(height: 100), // Space for floating navbar
+      ],
     );
   }
 
-  Widget _buildMainQualityCard(SensorData? data, FuzzyResult? fuzzy) {
-    if (data == null) return const SizedBox();
+  Widget _buildLeftGaugeSection(SensorData data, FuzzyResult? fuzzy) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary.withValues(alpha: 0.05),
+          ),
+          child: ScaleTransition(
+            scale: _pulseAnim,
+            child: QualityGauge(score: data.qualityScore, status: data.status),
+          ),
+        ),
+        const SizedBox(height: 10),
+        StatusBadge(status: data.status, large: false),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
+          ),
+          child: Text(
+            fuzzy?.recommendation ?? 'Menganalisis kualitas air...',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 9.5,
+              color: AppColors.textSecondary,
+              height: 1.3,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerticalSensorGrid(SensorData data) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _miniHorizontalSensorCard('pH Air', data.ph.toStringAsFixed(1), 'pH',
+            AppColors.chartPH, Icons.water_drop_rounded),
+        const SizedBox(height: 10),
+        _miniHorizontalSensorCard(
+            'Kekeruhan',
+            data.turbidity.toStringAsFixed(1),
+            'NTU',
+            AppColors.chartTurbidity,
+            Icons.opacity_rounded),
+        const SizedBox(height: 10),
+        _miniHorizontalSensorCard(
+            'Suhu Air',
+            data.temperature.toStringAsFixed(1),
+            '°C',
+            AppColors.chartTemp,
+            Icons.thermostat_rounded),
+      ],
+    );
+  }
+
+  Widget _miniHorizontalSensorCard(
+      String label, String value, String unit, Color color, IconData icon) {
     return GlassCard(
-      gradient: LinearGradient(
-        colors: [AppColors.bgCard, AppColors.primary.withValues(alpha: 0.2)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      padding: EdgeInsets.all(context.responsive.w(20)),
-      borderColor: AppColors.accent.withValues(alpha: 0.2),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      borderRadius: 12,
+      borderColor: color.withValues(alpha: 0.15),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kualitas Air Keseluruhan',
-                  style: TextStyle(
+                  label,
+                  style: const TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: context.responsive.sp(13),
-                    color: AppColors.textSecondary,
+                    fontSize: 9,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 8),
-                StatusBadge(status: data.status, large: true),
-                const SizedBox(height: 12),
-                Text(
-                  fuzzy?.recommendation ?? '',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: context.responsive.sp(12),
-                    color: AppColors.textMuted,
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      unit,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 9,
+                        color: color.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          ScaleTransition(
-            scale: _pulseAnim,
-            child: QualityGauge(score: data.qualityScore, status: data.status),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLoadingCard() {
-    return const GlassCard(
-      child: Center(
-        child: Column(
+  Widget _buildDecorativeBackground() {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 1.5,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeader(
+      SensorProvider provider, bool isConnected, bool isSimulation) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
           children: [
-            CircularProgressIndicator(color: AppColors.accent),
-            SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      spreadRadius: 2),
+                ],
+              ),
+              child: Image.asset(
+                'assets/icons/logo.png',
+                width: 40, // Increased size
+                height: 40,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TirtaSmart',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Dashboard Monitoring',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        ConnectionStatusChip(
+          status: isSimulation
+              ? 'SIMULASI'
+              : (isConnected ? 'TERHUBUNG' : 'TERPUTUS'),
+          connected: isConnected || isSimulation,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactAnalysis(FuzzyResult fuzzy) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.analytics_outlined, color: AppColors.accent, size: 14),
+            SizedBox(width: 8),
             Text(
-              'Menunggu data sensor...',
+              'Analisis Fuzzy Mamdani',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                color: AppColors.textSecondary,
-                fontSize: 14,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.5,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 10),
+        Row(
+          children: ['sangatBaik', 'baik', 'cukup', 'buruk', 'sangatBuruk']
+              .map((key) {
+            final value = fuzzy.membershipDegrees[key] ?? 0.0;
+            final color = _getMembershipColor(key);
+            final isActive = value > 0;
 
-  Widget _buildSectionTitle(String title) {
-    return Row(
-      children: [
-        Container(
-          width: 3,
-          height: 16,
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(14),
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+            return Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? color.withValues(alpha: 0.12)
+                      : AppColors.bgSurface.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isActive
+                        ? color.withValues(alpha: 0.3)
+                        : Colors.white.withValues(alpha: 0.05),
+                    width: 1,
+                  ),
+                  boxShadow: isActive
+                      ? const [
+                          BoxShadow(
+                              color: Color(0x1A000000),
+                              blurRadius: 4,
+                              spreadRadius: 0),
+                        ]
+                      : null,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      _getMembershipAbbreviation(key),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8,
+                        fontWeight:
+                            isActive ? FontWeight.w800 : FontWeight.w500,
+                        color: isActive ? color : AppColors.textMuted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${(value * 100).toInt()}%',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isActive ? color : AppColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Mini progress bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: SizedBox(
+                        height: 2,
+                        width: 20,
+                        child: LinearProgressIndicator(
+                          value: value,
+                          backgroundColor: Colors.white.withValues(alpha: 0.05),
+                          color: isActive ? color : Colors.transparent,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildSensorGrid(SensorData? data) {
-    final ph = data?.ph ?? 0.0;
-    final turbidity = data?.turbidity ?? 0.0;
-    final temperature = data?.temperature ?? 0.0;
+  Widget _buildInteractiveCharts(SensorProvider provider) {
+    final hourlyData = provider.getHourlyData(hours: 12);
+    final chartTypes = ['pH', 'NTU', '°C'];
+    final chartColors = [
+      AppColors.chartPH,
+      AppColors.chartTurbidity,
+      AppColors.chartTemp
+    ];
+    final sensorKeys = ['ph', 'turbidity', 'temperature'];
 
-    return Column(
-      children: [
-        AnimatedSensorValue(
-          label: 'pH Air',
-          value: ph.toStringAsFixed(2),
-          unit: 'pH',
-          color: AppColors.chartPH,
-          icon: Icons.water_drop,
-          minValue: 0,
-          maxValue: 14,
-          currentValue: ph,
-          safeRange: '6.5 - 8.5',
-        ),
-        const SizedBox(height: 12),
-        AnimatedSensorValue(
-          label: 'Kekeruhan (Turbidity)',
-          value: turbidity.toStringAsFixed(1),
-          unit: 'NTU',
-          color: AppColors.chartTurbidity,
-          icon: Icons.opacity,
-          minValue: 0,
-          maxValue: 20,
-          currentValue: turbidity,
-          safeRange: '< 5 NTU',
-        ),
-        const SizedBox(height: 12),
-        AnimatedSensorValue(
-          label: 'Suhu Air',
-          value: temperature.toStringAsFixed(1),
-          unit: '°C',
-          color: AppColors.chartTemp,
-          icon: Icons.thermostat,
-          minValue: 0,
-          maxValue: 50,
-          currentValue: temperature,
-          safeRange: '10 - 30°C',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFuzzyDetail(FuzzyResult fuzzy) {
     return GlassCard(
+      padding: const EdgeInsets.all(12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.analytics, color: AppColors.accent, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Derajat Keanggotaan Fuzzy',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              // Style Toggle Button
+              GestureDetector(
+                onTap: () => setState(
+                    () => _selectedChartStyle = (_selectedChartStyle + 1) % 2),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _selectedChartStyle == 0
+                            ? Icons.show_chart_rounded
+                            : Icons.bar_chart_rounded,
+                        size: 14,
+                        color: AppColors.accent,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _selectedChartStyle == 0 ? 'Garis' : 'Batang',
+                        style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 10,
+                            color: AppColors.accent,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Sensor Type Selector
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  children: List.generate(3, (index) {
+                    final isSelected = _selectedChart == index;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedChart = index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? chartColors[index]
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                      color: chartColors[index]
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      spreadRadius: 1),
+                                ]
+                              : [],
+                        ),
+                        child: Text(
+                          chartTypes[index],
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 10,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.w500,
+                            color:
+                                isSelected ? Colors.white : AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          ...fuzzy.membershipDegrees.entries.map((e) {
-            final pct = e.value;
-            final color = _getMembershipColor(e.key);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _getMembershipLabel(e.key),
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        '${(pct * 100).toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 12,
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Stack(
-                    children: [
-                      Container(
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: AppColors.bgSurface,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      FractionallySizedBox(
-                        widthFactor: pct,
-                        child: Container(
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
-          const Divider(color: AppColors.bgSurface, height: 24),
-          Row(
-            children: [
-              const Icon(Icons.info_outline, color: AppColors.accent, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  fuzzy.diagnosis,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
+          SizedBox(
+            height: 150,
+            child: _selectedChartStyle == 0
+                ? SensorLineChart(
+                    data: hourlyData, sensorType: sensorKeys[_selectedChart])
+                : SensorBarChart(
+                    data: hourlyData, sensorType: sensorKeys[_selectedChart]),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingView() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppColors.accent),
+          SizedBox(height: 16),
+          Text('Menunggu data...',
+              style: TextStyle(
+                  fontFamily: 'Poppins', color: AppColors.textSecondary)),
         ],
       ),
     );
@@ -436,99 +573,20 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  String _getMembershipLabel(String key) {
+  String _getMembershipAbbreviation(String key) {
     switch (key) {
       case 'sangatBaik':
-        return 'Sangat Baik';
+        return 'S. BAIK';
       case 'baik':
-        return 'Baik';
+        return 'BAIK';
       case 'cukup':
-        return 'Cukup';
+        return 'CUKUP';
       case 'buruk':
-        return 'Buruk';
+        return 'BURUK';
       case 'sangatBuruk':
-        return 'Sangat Buruk';
+        return 'S. BURUK';
       default:
-        return key;
+        return key.toUpperCase();
     }
-  }
-
-  Widget _buildMiniCharts(SensorProvider provider) {
-    final hourlyData = provider.getHourlyData(hours: 24);
-    return Column(
-      children: [
-        GlassCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'pH',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  color: AppColors.chartPH,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 100,
-                child: SensorLineChart(data: hourlyData, sensorType: 'ph'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Kekeruhan (NTU)',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  color: AppColors.chartTurbidity,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 100,
-                child: SensorLineChart(
-                  data: hourlyData,
-                  sensorType: 'turbidity',
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Suhu (°C)',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  color: AppColors.chartTemp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 100,
-                child: SensorLineChart(
-                  data: hourlyData,
-                  sensorType: 'temperature',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 }
