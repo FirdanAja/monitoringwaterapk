@@ -52,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(width: res.w(12)),
                       Expanded(
                         flex: 5,
-                        child: _buildStandardsCard(),
+                        child: _buildStandardsCard(provider),
                       ),
                     ],
                   ),
@@ -176,43 +176,179 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildStandardsCard() {
+  Widget _buildStandardsCard(SensorProvider provider) {
     return GlassCard(
       padding: EdgeInsets.all(context.responsive.w(12)),
       child: Column(
         children: [
-          _buildCompactStandard('pH', '6.5-8.5', AppColors.chartPH),
+          _buildEditableStandard(
+            'pH Air', 
+            '${provider.phMin}-${provider.phMax}', 
+            AppColors.chartPH,
+            () => _showEditThresholdDialog('pH', provider)
+          ),
           const Divider(color: Colors.white10, height: 12),
-          _buildCompactStandard('Kekeruhan', '<5 NTU', AppColors.chartTurbidity),
+          _buildEditableStandard(
+            'Kekeruhan', 
+            '<${provider.turbMax} NTU', 
+            AppColors.chartTurbidity,
+            () => _showEditThresholdDialog('Kekeruhan', provider)
+          ),
           const Divider(color: Colors.white10, height: 12),
-          _buildCompactStandard('Suhu', '10-30°C', AppColors.chartTemp),
+          _buildEditableStandard(
+            'Suhu Air', 
+            '${provider.tempMin}-${provider.tempMax}°C', 
+            AppColors.chartTemp,
+            () => _showEditThresholdDialog('Suhu', provider)
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCompactStandard(String label, String value, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(11),
-            color: AppColors.textSecondary,
-          ),
+  Widget _buildEditableStandard(String label, String value, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: context.responsive.sp(11),
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  'Ketuk untuk ubah',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: context.responsive.sp(7),
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(11),
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: context.responsive.sp(11),
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
+      ),
+    );
+  }
+
+  void _showEditThresholdDialog(String type, SensorProvider provider) {
+    final TextEditingController controller1 = TextEditingController();
+    final TextEditingController controller2 = TextEditingController();
+    String title = '';
+    String label1 = '';
+    String label2 = '';
+    bool isRange = true;
+
+    if (type == 'pH') {
+      title = 'Edit Ambang Batas pH';
+      label1 = 'Minimal';
+      label2 = 'Maksimal';
+      controller1.text = provider.phMin.toString();
+      controller2.text = provider.phMax.toString();
+    } else if (type == 'Kekeruhan') {
+      title = 'Edit Batas Kekeruhan';
+      label1 = 'Maksimal (NTU)';
+      controller1.text = provider.turbMax.toString();
+      isRange = false;
+    } else {
+      title = 'Edit Ambang Batas Suhu';
+      label1 = 'Minimal (°C)';
+      label2 = 'Maksimal (°C)';
+      controller1.text = provider.tempMin.toString();
+      controller2.text = provider.tempMax.toString();
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontFamily: 'Poppins', color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller1,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: label1,
+                labelStyle: const TextStyle(color: AppColors.textMuted),
+                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+              ),
+            ),
+            if (isRange) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller2,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: label2,
+                  labelStyle: const TextStyle(color: AppColors.textMuted),
+                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+                ),
+              ),
+            ],
+          ],
         ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val1 = double.tryParse(controller1.text);
+              final val2 = isRange ? double.tryParse(controller2.text) : null;
+              
+              if (val1 != null && (!isRange || val2 != null)) {
+                if (type == 'pH') {
+                  provider.updateThresholds(phMin: val1, phMax: val2);
+                } else if (type == 'Kekeruhan') {
+                  provider.updateThresholds(turbMax: val1);
+                } else {
+                  provider.updateThresholds(tempMin: val1, tempMax: val2);
+                }
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Ambang batas berhasil diperbarui'), backgroundColor: AppColors.good),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
+            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 

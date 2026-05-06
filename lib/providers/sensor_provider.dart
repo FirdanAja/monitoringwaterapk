@@ -24,6 +24,13 @@ class SensorProvider extends ChangeNotifier {
   // Settings
   bool _notificationsEnabled = true;
 
+  // Thresholds (Dynamic Configuration)
+  double _phMin = 6.5;
+  double _phMax = 8.5;
+  double _turbMax = 5.0;
+  double _tempMin = 10.0;
+  double _tempMax = 30.0;
+
   // Getters (Termasuk dummy MQTT untuk mencegah IDE error dari cache lama)
   SensorData? get currentData => _currentData;
   ConnectionStatus get connectionStatus => _connectionStatus;
@@ -32,6 +39,11 @@ class SensorProvider extends ChangeNotifier {
   List<SensorData> get historyData => _historyData;
   List<SensorData> get filteredHistory => _filteredHistory;
   bool get notificationsEnabled => _notificationsEnabled;
+  double get phMin => _phMin;
+  double get phMax => _phMax;
+  double get turbMax => _turbMax;
+  double get tempMin => _tempMin;
+  double get tempMax => _tempMax;
   String get mqttBroker => ''; // Deprecated
   int get mqttPort => 1883; // Deprecated
 
@@ -229,6 +241,23 @@ class SensorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateThresholds({
+    double? phMin,
+    double? phMax,
+    double? turbMax,
+    double? tempMin,
+    double? tempMax,
+  }) async {
+    if (phMin != null) _phMin = phMin;
+    if (phMax != null) _phMax = phMax;
+    if (turbMax != null) _turbMax = turbMax;
+    if (tempMin != null) _tempMin = tempMin;
+    if (tempMax != null) _tempMax = tempMax;
+
+    await _saveSettings();
+    notifyListeners();
+  }
+
   Future<void> reconnect() async {
     _isLoading = true;
     notifyListeners();
@@ -258,11 +287,21 @@ class SensorProvider extends ChangeNotifier {
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notifications_enabled', _notificationsEnabled);
+    await prefs.setDouble('ph_min', _phMin);
+    await prefs.setDouble('ph_max', _phMax);
+    await prefs.setDouble('turb_max', _turbMax);
+    await prefs.setDouble('temp_min', _tempMin);
+    await prefs.setDouble('temp_max', _tempMax);
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+    _phMin = prefs.getDouble('ph_min') ?? 6.5;
+    _phMax = prefs.getDouble('ph_max') ?? 8.5;
+    _turbMax = prefs.getDouble('turb_max') ?? 5.0;
+    _tempMin = prefs.getDouble('temp_min') ?? 10.0;
+    _tempMax = prefs.getDouble('temp_max') ?? 30.0;
   }
 
   void clearHistory() async {

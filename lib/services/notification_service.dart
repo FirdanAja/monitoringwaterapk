@@ -30,7 +30,7 @@ class NotificationService {
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
@@ -154,7 +154,7 @@ class NotificationService {
               ? Importance.defaultImportance
               : Importance.low,
       priority: importance == 'high' ? Priority.high : Priority.defaultPriority,
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/launcher_icon',
       color: _getStatusColor(data.status),
       enableVibration: importance == 'high',
       playSound: importance == 'high',
@@ -221,7 +221,7 @@ class NotificationService {
       channelDescription: 'Notifikasi unduhan laporan excel',
       importance: Importance.max,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/launcher_icon',
       color: const Color(0xFF00C6FF),
       styleInformation: BigTextStyleInformation(
         'Laporan $fileName siap dibuka. Klik untuk melihat detail kualitas air.',
