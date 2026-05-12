@@ -4,6 +4,7 @@ import '../providers/sensor_provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -47,7 +48,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Expanded(
                         flex: 4,
-                        child: _buildNotificationCard(provider),
+                        child: Column(
+                          children: [
+                            _buildNotificationCard(provider),
+                            SizedBox(height: res.h(12)),
+                            _buildBatteryOptimizationCard(),
+                          ],
+                        ),
                       ),
                       SizedBox(width: res.w(12)),
                       Expanded(
@@ -176,30 +183,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildStandardsCard(SensorProvider provider) {
+  Widget _buildBatteryOptimizationCard() {
     return GlassCard(
       padding: EdgeInsets.all(context.responsive.w(12)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(Icons.battery_saver_rounded, 
+                color: Colors.orange, 
+                size: context.responsive.w(20)
+              ),
+              IconButton(
+                onPressed: () async {
+                  if (await Permission.ignoreBatteryOptimizations.request().isGranted) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Optimasi baterai telah dinonaktifkan'), backgroundColor: AppColors.good),
+                    );
+                  } else {
+                    openAppSettings();
+                  }
+                },
+                icon: Icon(Icons.settings_power_rounded, color: AppColors.accent, size: context.responsive.w(20)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          SizedBox(height: context.responsive.h(4)),
+          Text(
+            'Mode Hemat Baterai',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: context.responsive.sp(11),
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Text(
+            'Matikan optimasi agar notif lancar',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: context.responsive.sp(9),
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStandardsCard(SensorProvider provider) {
+    return GlassCard(
+      padding: EdgeInsets.all(context.responsive.w(10)),
+      child: Column(
         children: [
           _buildEditableStandard(
-            'pH Air', 
-            '${provider.phMin}-${provider.phMax}', 
+            'Batas pH', 
+            '${provider.phAsamLimit} - ${provider.phNormalLimit}', 
             AppColors.chartPH,
-            () => _showEditThresholdDialog('pH', provider)
+            () => _showEditThresholdDialog('pH_Detailed', provider)
           ),
-          const Divider(color: Colors.white10, height: 12),
+          const Divider(color: Colors.white10, height: 10),
           _buildEditableStandard(
-            'Kekeruhan', 
-            '<${provider.turbMax} NTU', 
+            'Batas NTU', 
+            '${provider.turbJernihLimit} - ${provider.turbAgakKeruhLimit}', 
             AppColors.chartTurbidity,
-            () => _showEditThresholdDialog('Kekeruhan', provider)
+            () => _showEditThresholdDialog('Turbidity_Detailed', provider)
           ),
-          const Divider(color: Colors.white10, height: 12),
+          const Divider(color: Colors.white10, height: 10),
           _buildEditableStandard(
-            'Suhu Air', 
-            '${provider.tempMin}-${provider.tempMax}°C', 
+            'Batas Suhu', 
+            '${provider.tempDinginLimit} - ${provider.tempNormalLimit}', 
             AppColors.chartTemp,
-            () => _showEditThresholdDialog('Suhu', provider)
+            () => _showEditThresholdDialog('Temperature_Detailed', provider)
           ),
         ],
       ),
@@ -267,7 +327,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String label2 = '';
     bool isRange = true;
 
-    if (type == 'pH') {
+    if (type == 'pH_Detailed') {
+      title = 'Konfigurasi Batas pH';
+      label1 = 'Batas Asam (Netral mulai dari)';
+      label2 = 'Batas Netral (Basa mulai dari)';
+      controller1.text = provider.phAsamLimit.toString();
+      controller2.text = provider.phNormalLimit.toString();
+    } else if (type == 'Turbidity_Detailed') {
+      title = 'Konfigurasi Kekeruhan (NTU)';
+      label1 = 'Batas Jernih (Agak Keruh mulai)';
+      label2 = 'Batas Agak Keruh (Keruh mulai)';
+      controller1.text = provider.turbJernihLimit.toString();
+      controller2.text = provider.turbAgakKeruhLimit.toString();
+    } else if (type == 'Temperature_Detailed') {
+      title = 'Konfigurasi Suhu (°C)';
+      label1 = 'Batas Dingin (Sedang mulai)';
+      label2 = 'Batas Sedang (Tinggi mulai)';
+      controller1.text = provider.tempDinginLimit.toString();
+      controller2.text = provider.tempNormalLimit.toString();
+    } else if (type == 'pH') {
       title = 'Edit Ambang Batas pH';
       label1 = 'Minimal';
       label2 = 'Maksimal';
@@ -331,7 +409,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final val2 = isRange ? double.tryParse(controller2.text) : null;
               
               if (val1 != null && (!isRange || val2 != null)) {
-                if (type == 'pH') {
+                if (type == 'pH_Detailed') {
+                  provider.updateThresholds(phAsamLimit: val1, phNormalLimit: val2);
+                } else if (type == 'Turbidity_Detailed') {
+                  provider.updateThresholds(turbJernihLimit: val1, turbAgakKeruhLimit: val2);
+                } else if (type == 'Temperature_Detailed') {
+                  provider.updateThresholds(tempDinginLimit: val1, tempNormalLimit: val2);
+                } else if (type == 'pH') {
                   provider.updateThresholds(phMin: val1, phMax: val2);
                 } else if (type == 'Kekeruhan') {
                   provider.updateThresholds(turbMax: val1);

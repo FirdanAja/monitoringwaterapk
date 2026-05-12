@@ -7,10 +7,7 @@ import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
 import '../widgets/chart_widgets.dart';
 import '../services/notification_service.dart';
-import 'dart:io';
-import 'package:excel/excel.dart' hide Border;
-import 'package:path_provider/path_provider.dart';
-import 'package:intl/intl.dart';
+import '../services/pdf_service.dart';
 import 'package:open_filex/open_filex.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -48,8 +45,8 @@ class _ReportScreenState extends State<ReportScreen> {
             actions: [
               if (report != null && report.dailyData.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.file_download_rounded, color: AppColors.accent),
-                  onPressed: () => _exportToExcel(report),
+                  icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent),
+                  onPressed: () => _exportToPdf(report),
                 ),
             ],
           ),
@@ -355,34 +352,24 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Future<void> _exportToExcel(MonthlyReport report) async {
-    // ... (Same logic as before, just kept for functionality)
+  Future<void> _exportToPdf(MonthlyReport report) async {
     try {
-      var excel = Excel.createExcel();
-      Sheet sheetObject = excel['Laporan Kualitas Air'];
-      excel.setDefaultSheet('Laporan Kualitas Air');
-      sheetObject.appendRow([TextCellValue('Tanggal'), TextCellValue('pH'), TextCellValue('NTU'), TextCellValue('Suhu'), TextCellValue('Skor'), TextCellValue('Status')]);
-      for (var data in report.dailyData) {
-        sheetObject.appendRow([TextCellValue(DateFormat('yyyy-MM-dd').format(data.timestamp)), TextCellValue(data.ph.toStringAsFixed(2)), TextCellValue(data.turbidity.toStringAsFixed(1)), TextCellValue(data.temperature.toStringAsFixed(1)), TextCellValue(data.qualityScore.toStringAsFixed(1)), TextCellValue(data.status.label)]);
-      }
-      var fileBytes = excel.save();
-      final directory = await getApplicationDocumentsDirectory();
-      final monthName = _months[_selectedMonth - 1];
-      final fileName = 'Laporan_Bulan_${monthName}_$_selectedYear.xlsx';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsBytes(fileBytes!);
+      final file = await PdfService.generateMonthlyReport(report);
+      
       if (mounted) {
+        final fileName = file.path.split('/').last;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Laporan disimpan ke: $fileName'),
+            content: Text('Laporan PDF disimpan ke: $fileName'),
             backgroundColor: AppColors.good,
             action: SnackBarAction(
               label: 'BUKA',
               textColor: Colors.white,
               onPressed: () async {
-                debugPrint('Attempting to open file: ${file.path}');
                 final result = await OpenFilex.open(file.path);
-                debugPrint('Open file result: ${result.message}');
+                if (result.type != ResultType.done) {
+                  debugPrint('Gagal membuka file: ${result.message}');
+                }
               },
             ),
           ),
@@ -395,7 +382,11 @@ class _ReportScreenState extends State<ReportScreen> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal mengekspor: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengekspor PDF: $e'), backgroundColor: AppColors.danger)
+        );
+      }
     }
   }
 }

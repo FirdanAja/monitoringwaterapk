@@ -1,0 +1,12 @@
+{
+  "monitoring": {
+    "current": {
+      "ph": 7.2,
+      "turbidity": 2.5,
+      "temperature": 25.3,
+      "timestamp": 1746633600000,
+      "status": "Aman",
+      "quality_score": 85.5
+    }
+  }
+}

@@ -6,5 +6,12 @@
       "path": "C:\\Users\\Windows 11\\.antigravity\\extensions\\redhat.java-1.52.0-win32-x64\\jre\\21.0.9-win32-x86_64",
       "default": true
     }
-  ]
+  ],
+  "files.exclude": {
+    "**/android/build/**": true,
+    "**/.dart_tool/**": true,
+    "**/build/reports/**": true
+  },
+  "css.validate": true,
+  "css.lint.vendorPrefix": "ignore"
 }

@@ -13,17 +13,26 @@ import 'screens/splash_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
 import 'services/notification_service.dart';
+import 'services/background_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inisialisasi Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Inisialisasi Firebase (try-catch agar tidak crash saat hot restart)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    // Firebase sudah terinisialisasi (terjadi saat hot restart), abaikan
+    debugPrint('Firebase already initialized: $e');
+  }
 
   // Inisialisasi Notifikasi
   await NotificationService().initialize();
+
+  // Inisialisasi Background Service
+  await BackgroundService.initialize();
 
   // Lock orientation portrait
   await SystemChrome.setPreferredOrientations([

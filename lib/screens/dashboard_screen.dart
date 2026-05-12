@@ -293,10 +293,10 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
             const SizedBox(width: 12),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'TirtaSmart',
                   style: TextStyle(
                     fontFamily: 'Poppins',
@@ -305,14 +305,25 @@ class _DashboardScreenState extends State<DashboardScreen>
                     color: AppColors.textPrimary,
                   ),
                 ),
-                Text(
-                  'Dashboard Monitoring',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10,
-                    color: AppColors.textMuted,
+                if (provider.lastUpdateTime != null)
+                  Text(
+                    'Update: ${provider.lastUpdateTime!.hour.toString().padLeft(2, '0')}:${provider.lastUpdateTime!.minute.toString().padLeft(2, '0')}:${provider.lastUpdateTime!.second.toString().padLeft(2, '0')}',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 8,
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                else
+                  const Text(
+                    'Dashboard Monitoring',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 10,
+                      color: AppColors.textMuted,
+                    ),
                   ),
-                ),
               ],
             ),
           ],
@@ -336,7 +347,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Icon(Icons.analytics_outlined, color: AppColors.accent, size: 14),
             SizedBox(width: 8),
             Text(
-              'Analisis Fuzzy Mamdani',
+              'Analisis Sistem',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 11,

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../models/sensor_data.dart';
 import '../services/fuzzy_mamdani_service.dart';
 import '../services/notification_service.dart';
@@ -10,12 +12,17 @@ enum ConnectionStatus { disconnected, connected }
 class SensorProvider extends ChangeNotifier {
   final FuzzyMamdaniService _fuzzyService = FuzzyMamdaniService();
   final NotificationService _notificationService = NotificationService();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   // Current data
   SensorData? _currentData;
   ConnectionStatus _connectionStatus = ConnectionStatus.disconnected;
   bool _isLoading = false;
   FuzzyResult? _lastFuzzyResult;
+  DateTime? _lastUpdateTime;
+  StreamSubscription<DatabaseEvent>? _sensorSubscription;
+  StreamSubscription<DatabaseEvent>? _statusSubscription;
+  Timer? _heartbeatTimer;
 
   // Historical data
   List<SensorData> _historyData = [];
@@ -27,15 +34,24 @@ class SensorProvider extends ChangeNotifier {
   // Thresholds (Dynamic Configuration)
   double _phMin = 6.5;
   double _phMax = 8.5;
-  double _turbMax = 5.0;
+  double _turbMax = 25.0;
   double _tempMin = 10.0;
   double _tempMax = 30.0;
+
+  // New detailed thresholds
+  double _turbJernihLimit = 12.5;
+  double _turbAgakKeruhLimit = 25.0;
+  double _tempDinginLimit = 18.0;
+  double _tempNormalLimit = 26.0;
+  double _phAsamLimit = 6.0;
+  double _phNormalLimit = 8.0;
 
   // Getters (Termasuk dummy MQTT untuk mencegah IDE error dari cache lama)
   SensorData? get currentData => _currentData;
   ConnectionStatus get connectionStatus => _connectionStatus;
   bool get isLoading => _isLoading;
   FuzzyResult? get lastFuzzyResult => _lastFuzzyResult;
+  DateTime? get lastUpdateTime => _lastUpdateTime;
   List<SensorData> get historyData => _historyData;
   List<SensorData> get filteredHistory => _filteredHistory;
   bool get notificationsEnabled => _notificationsEnabled;
@@ -44,6 +60,14 @@ class SensorProvider extends ChangeNotifier {
   double get turbMax => _turbMax;
   double get tempMin => _tempMin;
   double get tempMax => _tempMax;
+  
+  // Getters for detailed thresholds
+  double get turbJernihLimit => _turbJernihLimit;
+  double get turbAgakKeruhLimit => _turbAgakKeruhLimit;
+  double get tempDinginLimit => _tempDinginLimit;
+  double get tempNormalLimit => _tempNormalLimit;
+  double get phAsamLimit => _phAsamLimit;
+  double get phNormalLimit => _phNormalLimit;
   String get mqttBroker => ''; // Deprecated
   int get mqttPort => 1883; // Deprecated
 
@@ -55,85 +79,135 @@ class SensorProvider extends ChangeNotifier {
     await _loadSettings();
     await _loadHistoryFromPrefs();
 
-    // Gunakan dummy data karena alat belum ada
-    _startDummyStream();
+    // Aktifkan Firebase Realtime Stream
+    _startFirebaseStream();
 
     _isLoading = false;
     notifyListeners();
   }
 
-  void _startDummyStream() {
-    _connectionStatus = ConnectionStatus.connected;
-    notifyListeners();
 
-    // Timer untuk simulasi data setiap 3 detik
-    Stream.periodic(const Duration(seconds: 3)).listen((_) {
-      final double ph = 6.5 + (DateTime.now().millisecond % 100) / 50; // Range 6.5 - 8.5
-      final double turbidity = (DateTime.now().second % 10).toDouble(); // Range 0 - 10 NTU
-      final double temperature = 24.0 + (DateTime.now().second % 5); // Range 24 - 29 C
-
-      final fuzzyResult = _fuzzyService.evaluate(ph, turbidity, temperature);
-      
-      final newData = SensorData(
-        ph: ph,
-        turbidity: turbidity,
-        temperature: temperature,
-        timestamp: DateTime.now(),
-        status: _mapStatusToEnum(fuzzyResult.statusLabel),
-        fuzzyResult: fuzzyResult.statusLabel,
-        qualityScore: fuzzyResult.qualityScore,
-      );
-
-      _onSensorDataReceived(newData, fuzzyResult);
-    });
-  }
 
   void _startFirebaseStream() {
-    // Dimatikan sementara sesuai permintaan user
-    /*
-    _connectionStatus = ConnectionStatus.connected;
+    debugPrint('🔥 Starting Firebase Stream...');
+    
+    // Batalkan subscription lama jika ada
+    _sensorSubscription?.cancel();
+    _statusSubscription?.cancel();
+    _heartbeatTimer?.cancel();
+    
+    // 1. Listen to Connection Status (Presence System)
+    _statusSubscription = _database.child('monitoring/status/online').onValue.listen((event) {
+      final bool isOnline = event.snapshot.value == true;
+      debugPrint('📡 Device Online Status: $isOnline');
+      
+      if (!isOnline) {
+        _connectionStatus = ConnectionStatus.disconnected;
+        _notificationService.cancelAll(); // Stop notif & TTS saat terputus
+        notifyListeners();
+      } else {
+        // If it says online, we still wait for real data to confirm
+        _connectionStatus = ConnectionStatus.connected;
+        notifyListeners();
+      }
+    });
+
+    // 2. Listen to Sensor Data
+    _database.child('monitoring/current').keepSynced(true);
+    _sensorSubscription = _database.child('monitoring/current').onValue.listen((event) {
+      debugPrint('\n📥 Firebase Data Received at ${DateTime.now().toString()}');
+      
       if (event.snapshot.value != null) {
-        final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+        _connectionStatus = ConnectionStatus.connected;
         
-        // Membaca nilai dari Firebase dengan fallback default
-        final double ph = (data['ph'] ?? 7.0).toDouble();
-        final double turbidity = (data['turbidity'] ?? 0.0).toDouble();
-        final double temperature = (data['temperature'] ?? 25.0).toDouble();
+        try {
+          final dynamic rawValue = event.snapshot.value;
+          Map<String, dynamic> data = {};
+          
+          if (rawValue is Map) {
+            data = Map<String, dynamic>.from(rawValue.map(
+              (key, value) => MapEntry(key.toString(), value),
+            ));
+          }
+          
+          final double ph = _parseToDouble(data['ph'], 7.0);
+          final double turbidity = _parseToDouble(data['turbidity'], 0.0);
+          final double temperature = _parseToDouble(data['temperature'], 25.0);
 
-        // Evaluasi fuzzy
-        final fuzzyResult = _fuzzyService.evaluate(ph, turbidity, temperature);
-        
-        // Buat objek SensorData
-        final newData = SensorData(
-          ph: ph,
-          turbidity: turbidity,
-          temperature: temperature,
-          timestamp: DateTime.now(), // Memakai waktu penerimaan di hp
-          status: _mapStatusToEnum(fuzzyResult.statusLabel),
-          fuzzyResult: fuzzyResult.statusLabel,
-          qualityScore: fuzzyResult.qualityScore,
-        );
 
-        _onSensorDataReceived(newData, fuzzyResult);
+          final fuzzyResult = _fuzzyService.evaluate(
+            ph, turbidity, temperature,
+            phMin: _phMin,
+            phMax: _phMax,
+            turbMax: _turbMax,
+          );
+          
+          final newData = SensorData(
+            ph: ph,
+            turbidity: turbidity,
+            temperature: temperature,
+            timestamp: DateTime.now(),
+            status: fuzzyResult.status,
+            fuzzyResult: fuzzyResult.statusLabel,
+            qualityScore: fuzzyResult.qualityScore,
+          );
+
+          _lastUpdateTime = DateTime.now();
+          _onSensorDataReceived(newData, fuzzyResult);
+        } catch (e) {
+          debugPrint('❌ Error parsing Firebase data: $e');
+          _connectionStatus = ConnectionStatus.disconnected;
+          notifyListeners();
+        }
+      } else {
+        _connectionStatus = ConnectionStatus.disconnected;
+        notifyListeners();
       }
     }, onError: (error) {
-       _connectionStatus = ConnectionStatus.disconnected;
-       notifyListeners();
+      debugPrint('❌ Firebase Stream Error: $error');
+      _connectionStatus = ConnectionStatus.disconnected;
+      _notificationService.cancelAll(); // Stop notif & TTS saat error
+      notifyListeners();
     });
-    */
-  }
-  
-  WaterQualityStatus _mapStatusToEnum(String statusLevel) {
-    if (statusLevel.toLowerCase().contains("aman") || statusLevel.toLowerCase().contains("baik")) {
-      return WaterQualityStatus.drinkable;
-    } else if (statusLevel.toLowerCase().contains("waspada") || statusLevel.toLowerCase().contains("sedang")) {
-      return WaterQualityStatus.usable;
-    } else {
-      return WaterQualityStatus.notDrinkable;
-    }
+
+    // 3. Fallback Heartbeat Check (Every 10 seconds)
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (_lastUpdateTime != null) {
+        final difference = DateTime.now().difference(_lastUpdateTime!);
+        // Jika sudah lebih dari 20 detik tidak ada data baru, anggap terputus
+        if (difference.inSeconds > 20 && _connectionStatus == ConnectionStatus.connected) {
+          debugPrint('⚠️ Heartbeat timeout: No data for ${difference.inSeconds}s. Marking as disconnected.');
+          _connectionStatus = ConnectionStatus.disconnected;
+          _notificationService.cancelAll(); // Stop notif & TTS saat timeout
+          notifyListeners();
+        }
+      }
+    });
   }
 
+  double _parseToDouble(dynamic value, double defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
+
+  @override
+  void dispose() {
+    _sensorSubscription?.cancel();
+    _statusSubscription?.cancel();
+    _heartbeatTimer?.cancel();
+    super.dispose();
+  }
+  
+
+
   void _onSensorDataReceived(SensorData data, FuzzyResult fuzzyResult) async {
+    debugPrint('📲 _onSensorDataReceived called');
+    debugPrint('   Temperature: ${data.temperature} °C');
+    debugPrint('   pH: ${data.ph}');
+    debugPrint('   Turbidity: ${data.turbidity}');
+    
     _currentData = data;
     _lastFuzzyResult = fuzzyResult;
 
@@ -146,16 +220,20 @@ class SensorProvider extends ChangeNotifier {
 
     await _saveHistoryToPrefs();
 
-    // Kirim notifikasi kalau notif diaktifkan dan air bahaya
-    if (_notificationsEnabled &&
-        (data.status == WaterQualityStatus.notDrinkable)) {
+    // Kirim notifikasi jika status Waspada atau Bahaya
+    if (_notificationsEnabled && (data.status == WaterQualityStatus.notDrinkable || data.status == WaterQualityStatus.usable)) {
       await _notificationService.sendWaterQualityAlert(
         data: data,
         fuzzyResult: data.fuzzyResult,
       );
+    } else {
+      // Stop suara jika status membaik
+      _notificationService.stopSpeechLoop();
     }
 
+    debugPrint('🔔 Calling notifyListeners()...');
     notifyListeners();
+    debugPrint('✅ notifyListeners() called - UI should rebuild!\n');
   }
 
   // Filter history berdasarkan tanggal
@@ -236,23 +314,66 @@ class SensorProvider extends ChangeNotifier {
     int? port, // Deprecated
     bool? notifications,
   }) async {
-    if (notifications != null) _notificationsEnabled = notifications;
+    if (notifications != null) {
+      _notificationsEnabled = notifications;
+      if (!notifications) {
+        _notificationService.stopSpeechLoop();
+      } else if (_currentData != null) {
+        // Langsung munculkan notifikasi status saat ini ketika dinyalakan
+        await _notificationService.sendWaterQualityAlert(
+          data: _currentData!,
+          fuzzyResult: _currentData!.fuzzyResult,
+        );
+      }
+    }
     await _saveSettings();
     notifyListeners();
   }
-
   Future<void> updateThresholds({
     double? phMin,
     double? phMax,
     double? turbMax,
     double? tempMin,
     double? tempMax,
+    double? turbJernihLimit,
+    double? turbAgakKeruhLimit,
+    double? tempDinginLimit,
+    double? tempNormalLimit,
+    double? phAsamLimit,
+    double? phNormalLimit,
   }) async {
+    // Sinkronisasi agar perubahan di Pengaturan Langsung Ngefek
     if (phMin != null) _phMin = phMin;
     if (phMax != null) _phMax = phMax;
+    
+    // Jika user edit via 'Detailed' dialog di Settings, update juga phMin/phMax-nya
+    if (phAsamLimit != null) {
+      _phAsamLimit = phAsamLimit;
+      _phMin = phAsamLimit; 
+    }
+    if (phNormalLimit != null) {
+      _phNormalLimit = phNormalLimit;
+      _phMax = phNormalLimit;
+    }
+    
     if (turbMax != null) _turbMax = turbMax;
+    if (turbJernihLimit != null) {
+      _turbJernihLimit = turbJernihLimit;
+      // Gunakan batas jernih sebagai turbMax dasar jika tidak ada input turbMax
+      if (turbMax == null) _turbMax = turbJernihLimit;
+    }
+    if (turbAgakKeruhLimit != null) _turbAgakKeruhLimit = turbAgakKeruhLimit;
+    
     if (tempMin != null) _tempMin = tempMin;
     if (tempMax != null) _tempMax = tempMax;
+    if (tempDinginLimit != null) {
+      _tempDinginLimit = tempDinginLimit;
+      _tempMin = tempDinginLimit;
+    }
+    if (tempNormalLimit != null) {
+      _tempNormalLimit = tempNormalLimit;
+      _tempMax = tempNormalLimit;
+    }
 
     await _saveSettings();
     notifyListeners();
@@ -292,6 +413,12 @@ class SensorProvider extends ChangeNotifier {
     await prefs.setDouble('turb_max', _turbMax);
     await prefs.setDouble('temp_min', _tempMin);
     await prefs.setDouble('temp_max', _tempMax);
+    await prefs.setDouble('turb_jernih_limit', _turbJernihLimit);
+    await prefs.setDouble('turb_agak_keruh_limit', _turbAgakKeruhLimit);
+    await prefs.setDouble('temp_dingin_limit', _tempDinginLimit);
+    await prefs.setDouble('temp_normal_limit', _tempNormalLimit);
+    await prefs.setDouble('ph_asam_limit', _phAsamLimit);
+    await prefs.setDouble('ph_normal_limit', _phNormalLimit);
   }
 
   Future<void> _loadSettings() async {
@@ -299,9 +426,15 @@ class SensorProvider extends ChangeNotifier {
     _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
     _phMin = prefs.getDouble('ph_min') ?? 6.5;
     _phMax = prefs.getDouble('ph_max') ?? 8.5;
-    _turbMax = prefs.getDouble('turb_max') ?? 5.0;
+    _turbMax = prefs.getDouble('turb_max') ?? 25.0;
     _tempMin = prefs.getDouble('temp_min') ?? 10.0;
     _tempMax = prefs.getDouble('temp_max') ?? 30.0;
+    _turbJernihLimit = prefs.getDouble('turb_jernih_limit') ?? 12.5;
+    _turbAgakKeruhLimit = prefs.getDouble('turb_agak_keruh_limit') ?? 25.0;
+    _tempDinginLimit = prefs.getDouble('temp_dingin_limit') ?? 18.0;
+    _tempNormalLimit = prefs.getDouble('temp_normal_limit') ?? 26.0;
+    _phAsamLimit = prefs.getDouble('ph_asam_limit') ?? 6.0;
+    _phNormalLimit = prefs.getDouble('ph_normal_limit') ?? 8.0;
   }
 
   void clearHistory() async {

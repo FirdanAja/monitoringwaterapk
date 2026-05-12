@@ -1,0 +1,181 @@
+{
+  "monitoring": {
+    "current": {
+      "ph": 7.2,
+      "turbidity": 2.5,
+      "temperature": 25.3,
+      "timestamp": 1746633600000,
+      "status": "Aman",
+      "quality_score": 85.5,
+      "fuzzy_result": "Kualitas Air Baik - Aman untuk Dikonsumsi"
+    },
+    "history": {
+      "2026_05_07_14_30_00": {
+        "ph": 7.2,
+        "turbidity": 2.5,
+        "temperature": 25.3,
+        "timestamp": 1746633600000,
+        "status": "Aman",
+        "quality_score": 85.5,
+        "fuzzy_result": "Kualitas Air Baik - Aman untuk Dikonsumsi"
+      },
+      "2026_05_07_14_25_00": {
+        "ph": 7.0,
+        "turbidity": 3.0,
+        "temperature": 24.8,
+        "timestamp": 1746633300000,
+        "status": "Aman",
+        "quality_score": 82.0,
+        "fuzzy_result": "Kualitas Air Baik - Aman untuk Dikonsumsi"
+      },
+      "2026_05_07_14_20_00": {
+        "ph": 6.8,
+        "turbidity": 4.2,
+        "temperature": 26.1,
+        "timestamp": 1746633000000,
+        "status": "Waspada",
+        "quality_score": 68.5,
+        "fuzzy_result": "Kualitas Air Sedang - Perlu Perhatian"
+      },
+      "2026_05_07_14_15_00": {
+        "ph": 7.5,
+        "turbidity": 1.8,
+        "temperature": 25.0,
+        "timestamp": 1746632700000,
+        "status": "Aman",
+        "quality_score": 90.2,
+        "fuzzy_result": "Kualitas Air Sangat Baik - Aman untuk Dikonsumsi"
+      },
+      "2026_05_07_14_10_00": {
+        "ph": 6.5,
+        "turbidity": 5.5,
+        "temperature": 27.2,
+        "timestamp": 1746632400000,
+        "status": "Bahaya",
+        "quality_score": 45.8,
+        "fuzzy_result": "Kualitas Air Buruk - Tidak Aman untuk Dikonsumsi"
+      }
+    },
+    "chart": {
+      "hourly": {
+        "2026_05_07_14": {
+          "avg_ph": 7.0,
+          "avg_turbidity": 3.4,
+          "avg_temperature": 25.6,
+          "avg_quality_score": 74.4,
+          "readings_count": 5
+        },
+        "2026_05_07_13": {
+          "avg_ph": 7.1,
+          "avg_turbidity": 2.8,
+          "avg_temperature": 25.2,
+          "avg_quality_score": 78.5,
+          "readings_count": 12
+        },
+        "2026_05_07_12": {
+          "avg_ph": 7.3,
+          "avg_turbidity": 2.2,
+          "avg_temperature": 24.8,
+          "avg_quality_score": 82.3,
+          "readings_count": 12
+        }
+      },
+      "daily": {
+        "2026_05_07": {
+          "avg_ph": 7.1,
+          "avg_turbidity": 2.8,
+          "avg_temperature": 25.2,
+          "avg_quality_score": 78.4,
+          "readings_count": 29,
+          "good_count": 22,
+          "moderate_count": 5,
+          "poor_count": 2
+        },
+        "2026_05_06": {
+          "avg_ph": 7.2,
+          "avg_turbidity": 2.5,
+          "avg_temperature": 25.0,
+          "avg_quality_score": 80.5,
+          "readings_count": 288,
+          "good_count": 250,
+          "moderate_count": 30,
+          "poor_count": 8
+        },
+        "2026_05_05": {
+          "avg_ph": 7.0,
+          "avg_turbidity": 3.2,
+          "avg_temperature": 25.5,
+          "avg_quality_score": 75.2,
+          "readings_count": 288,
+          "good_count": 220,
+          "moderate_count": 55,
+          "poor_count": 13
+        }
+      }
+    },
+    "monthly_report": {
+      "2026_05": {
+        "year": 2026,
+        "month": 5,
+        "avg_ph": 7.1,
+        "avg_turbidity": 2.9,
+        "avg_temperature": 25.2,
+        "avg_quality_score": 78.0,
+        "total_readings": 605,
+        "good_count": 492,
+        "moderate_count": 90,
+        "poor_count": 23,
+        "danger_count": 0,
+        "compliance_rate": 96.2,
+        "generated_at": 1746633600000
+      },
+      "2026_04": {
+        "year": 2026,
+        "month": 4,
+        "avg_ph": 7.2,
+        "avg_turbidity": 2.7,
+        "avg_temperature": 24.8,
+        "avg_quality_score": 80.5,
+        "total_readings": 8640,
+        "good_count": 7200,
+        "moderate_count": 1200,
+        "poor_count": 240,
+        "danger_count": 0,
+        "compliance_rate": 97.2,
+        "generated_at": 1744041600000
+      }
+    },
+    "settings": {
+      "thresholds": {
+        "ph_min": 6.5,
+        "ph_max": 8.5,
+        "turbidity_max": 5.0,
+        "temperature_min": 10.0,
+        "temperature_max": 30.0
+      },
+      "notifications": {
+        "enabled": true,
+        "alert_on_poor_quality": true,
+        "alert_on_danger": true
+      },
+      "device_info": {
+        "device_id": "ESP8266_001",
+        "location": "PDAM Station A",
+        "last_online": 1746633600000,
+        "firmware_version": "1.0.0"
+      }
+    },
+    "alerts": {
+      "2026_05_07_14_10_00": {
+        "timestamp": 1746632400000,
+        "type": "poor_quality",
+        "message": "Kualitas air buruk terdeteksi",
+        "ph": 6.5,
+        "turbidity": 5.5,
+        "temperature": 27.2,
+        "quality_score": 45.8,
+        "acknowledged": false
+      }
+    }
+  }
+}

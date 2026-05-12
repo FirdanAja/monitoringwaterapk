@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:open_filex/open_filex.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../models/sensor_data.dart';
 
 class NotificationService {
@@ -14,12 +15,17 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
-
-  static const String _lastNotifKey = 'last_notification_time';
-  static const int _notifCooldownSeconds = 60; // Minimal 60 detik antara notif
-
+  final FlutterTts _flutterTts = FlutterTts();
   bool _isInitialized = false;
-  WaterQualityStatus? _lastNotifiedStatus;
+  bool _shouldLoopSpeech = false;
+  bool _isSpeaking = false;
+  String _currentSpeechText = "";
+
+  // Data untuk mengulang notifikasi bersama suara
+  int? _lastAlertId;
+  SensorData? _lastAlertData;
+  String? _lastFuzzyResult;
+
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -56,11 +62,90 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
+    // Buat Channel secara eksplisit untuk Android 8+ (PENTING untuk Background Service)
+    final androidImplementation = _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    
+    if (androidImplementation != null) {
+      await androidImplementation.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'water_quality_high_priority',
+          'Peringatan Kualitas Air',
+          description: 'Notifikasi penting untuk kondisi air buruk atau keruh',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+          enableLights: true,
+        ),
+      );
+
+      await androidImplementation.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'file_download_channel',
+          'Unduhan File',
+          description: 'Notifikasi unduhan laporan excel',
+          importance: Importance.max,
+        ),
+      );
+    }
+
+    // Inisialisasi TTS
+    await _flutterTts.setLanguage("id-ID");
+    await _flutterTts.setPitch(1.0);
+    await _flutterTts.setSpeechRate(0.5);
+
+    // Looping logic: saat bicara selesai, cek apakah harus mengulang
+    _flutterTts.setStartHandler(() {
+      _isSpeaking = true;
+    });
+
+    _flutterTts.setCompletionHandler(() async {
+      _isSpeaking = false;
+      if (_shouldLoopSpeech && _currentSpeechText.isNotEmpty) {
+        await _flutterTts.speak(_currentSpeechText);
+        
+        // Re-show notification agar "berulang" bersama suaranya
+        if (_lastAlertId != null && _lastAlertData != null && _lastFuzzyResult != null) {
+          await _showNotification(
+            id: _lastAlertId!,
+            data: _lastAlertData!,
+            fuzzyResult: _lastFuzzyResult!,
+          );
+        }
+      }
+    });
+
+    _flutterTts.setErrorHandler((msg) {
+      _isSpeaking = false;
+    });
+
     _isInitialized = true;
+  }
+
+  Future<void> _speak(String text) async {
+    if (kIsWeb) return;
+    
+    // Jika teks sama dan sedang bicara, abaikan agar tidak tumpang tindih
+    if (_isSpeaking && _currentSpeechText == text) return;
+    
+    // Stop dulu yang lama jika ada, baru mulai yang baru
+    if (_isSpeaking) {
+      await _flutterTts.stop();
+    }
+    
+    _isSpeaking = true;
+    _currentSpeechText = text;
+    await _flutterTts.speak(text);
   }
 
   void _onNotificationTapped(NotificationResponse response) async {
     debugPrint('Notification tapped with payload: ${response.payload}');
+    
+    // Stop suara saat notifikasi diklik/direspon
+    stopSpeechLoop();
+
     if (response.payload != null && response.payload!.endsWith('.xlsx')) {
       debugPrint('Attempting to open Excel file: ${response.payload}');
       final result = await OpenFilex.open(response.payload!);
@@ -76,29 +161,60 @@ class NotificationService {
     if (kIsWeb) return;
     if (!_isInitialized) await initialize();
 
-    // Cek cooldown
-    if (!await _canSendNotification(data.status)) return;
+    // HANYA kirim notifikasi jika statusnya BAHAYA (notDrinkable)
+    if (data.status == WaterQualityStatus.notDrinkable) {
+      // ID unik berbasis waktu agar notifikasi bertumpuk (tidak menimpa)
+      final uniqueId = DateTime.now().millisecondsSinceEpoch % 100000;
 
+      await _showNotification(
+        id: uniqueId,
+        data: data,
+        fuzzyResult: fuzzyResult,
+      );
+
+      // Suara orang ngomong
+      String speechText = "";
+      bool isBahaya = data.status == WaterQualityStatus.notDrinkable;
+      if (data.turbidity > 25.0) {
+        speechText = isBahaya 
+          ? 'Peringatan, air keruh terdeteksi.'
+          : 'Waspada. Air agak keruh.';
+      } else if (data.status == WaterQualityStatus.usable) {
+        speechText = 'Waspada. Air agak keruh.';
+      } else {
+        speechText = ""; // Diam kalau aman
+      }
+      
+      _currentSpeechText = speechText;
+      _shouldLoopSpeech = true;
+      
+      // Simpan data untuk pengulangan di completion handler
+      _lastAlertId = uniqueId;
+      _lastAlertData = data;
+      _lastFuzzyResult = fuzzyResult;
+
+      _speak(speechText);
+    } else {
+      // Jika status membaik (Aman/Waspada), stop suara dan jangan kirim notif baru
+      stopSpeechLoop();
+    }
+  }
+
+  /// Helper untuk menampilkan notifikasi
+  Future<void> _showNotification({
+    required int id,
+    required SensorData data,
+    required String fuzzyResult,
+  }) async {
     final notifData = _buildNotificationContent(data, fuzzyResult);
-
+    
     await _flutterLocalNotificationsPlugin.show(
-      notifData['id'] as int,
+      id,
       notifData['title'] as String,
       notifData['body'] as String,
       notifData['details'] as NotificationDetails,
-      payload: jsonEncode({
-        'ph': data.ph,
-        'turbidity': data.turbidity,
-        'temperature': data.temperature,
-        'status': data.status.name,
-        'timestamp': data.timestamp.toIso8601String(),
-      }),
+      payload: jsonEncode(data.toJson()),
     );
-
-    // Simpan waktu notif terakhir
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastNotifKey, DateTime.now().toIso8601String());
-    _lastNotifiedStatus = data.status;
   }
 
   Map<String, dynamic> _buildNotificationContent(
@@ -108,60 +224,53 @@ class NotificationService {
     int notifId;
     String title;
     String body;
-    String importance;
+
+
 
     switch (data.status) {
       case WaterQualityStatus.notDrinkable:
         notifId = 1001;
-        title = '🚨 Air Tidak Layak Minum';
-        body = 'Kualitas air buruk! pH: ${data.ph.toStringAsFixed(2)}, '
-            'Kekeruhan: ${data.turbidity.toStringAsFixed(1)} NTU, '
-            'Suhu: ${data.temperature.toStringAsFixed(1)}°C. '
-            'Air tidak aman digunakan.';
-        importance = 'high';
+        title = '🚨 BAHAYA: Air Keruh';
+        body = 'Status: $fuzzyResult (${data.turbidity.toStringAsFixed(1)} NTU). '
+               'Harap periksa kondisi air segera.';
         break;
       case WaterQualityStatus.usable:
         notifId = 1002;
-        title = '⚠️ Air Layak Tidak Minum';
-        body =
-            'Air cukup bersih untuk kebutuhan MCK, namun tidak disarankan untuk diminum. '
-            'pH: ${data.ph.toStringAsFixed(2)}, Kekeruhan: ${data.turbidity.toStringAsFixed(1)} NTU.';
-        importance = 'default';
+        title = '⚠️ WASPADA: Air Agak Keruh';
+        body = 'Status: $fuzzyResult (${data.turbidity.toStringAsFixed(1)} NTU). '
+               'Kondisi air mulai menurun.';
         break;
       case WaterQualityStatus.drinkable:
         notifId = 1003;
-        title = '✅ Air Layak Minum';
-        body =
-            'Kualitas air sangat baik. Skor Fuzzy: ${data.qualityScore.toStringAsFixed(1)}. '
-            'Air aman untuk diminum.';
-        importance = 'low';
+        title = '✅ AMAN: Air Jernih';
+        body = 'Status: $fuzzyResult (${data.turbidity.toStringAsFixed(1)} NTU). '
+               'Kualitas air dalam kondisi baik.';
         break;
       default:
         notifId = 1004;
-        title = 'Kualitas Air PDAM';
-        body =
-            'Status: ${data.status.label}. Skor: ${data.qualityScore.toStringAsFixed(1)}/100.';
-        importance = 'low';
+        title = 'Update Kualitas Air';
+        body = 'Status: ${data.status.label}.';
+
     }
 
+    final isHighPriority = data.status == WaterQualityStatus.notDrinkable;
+
     final androidDetails = AndroidNotificationDetails(
-      'water_quality_channel',
-      'Water Quality Alerts',
-      channelDescription: 'Notifikasi kualitas air PDAM',
-      importance: importance == 'high'
-          ? Importance.max
-          : importance == 'default'
-              ? Importance.defaultImportance
-              : Importance.low,
-      priority: importance == 'high' ? Priority.high : Priority.defaultPriority,
+      'water_quality_high_priority',
+      'Peringatan Kualitas Air',
+      channelDescription: 'Notifikasi penting untuk kondisi air buruk atau keruh',
+      importance: isHighPriority ? Importance.max : Importance.low,
+      priority: isHighPriority ? Priority.max : Priority.low,
       icon: '@mipmap/launcher_icon',
       color: _getStatusColor(data.status),
-      enableVibration: importance == 'high',
-      playSound: importance == 'high',
+      enableVibration: isHighPriority,
+      playSound: isHighPriority,
+      ticker: title,
+      category: isHighPriority ? AndroidNotificationCategory.alarm : AndroidNotificationCategory.status,
       styleInformation: BigTextStyleInformation(
         body,
         contentTitle: title,
-        summaryText: 'Detail Kualitas Air',
+        summaryText: 'Detail Sensor',
       ),
     );
 
@@ -188,23 +297,6 @@ class NotificationService {
       default:
         return const Color(0xFF4CAF50);
     }
-  }
-
-  Future<bool> _canSendNotification(WaterQualityStatus newStatus) async {
-    // Selalu kirim kalau status tidak layak minum
-    if (newStatus == WaterQualityStatus.notDrinkable) return true;
-
-    // Kalau status sama dengan sebelumnya, cek cooldown
-    if (_lastNotifiedStatus == newStatus) {
-      final prefs = await SharedPreferences.getInstance();
-      final lastTimeStr = prefs.getString(_lastNotifKey);
-      if (lastTimeStr != null) {
-        final lastTime = DateTime.parse(lastTimeStr);
-        final diff = DateTime.now().difference(lastTime).inSeconds;
-        if (diff < _notifCooldownSeconds) return false;
-      }
-    }
-    return true;
   }
 
   /// Kirim notifikasi saat file berhasil diunduh
@@ -246,6 +338,18 @@ class NotificationService {
 
   /// Batalkan semua notifikasi
   Future<void> cancelAll() async {
+    stopSpeechLoop();
     await _flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  /// Berhenti bicara dan stop loop
+  void stopSpeechLoop() {
+    _shouldLoopSpeech = false;
+    _currentSpeechText = "";
+    _lastAlertId = null;
+    _lastAlertData = null;
+    _lastFuzzyResult = null;
+    _isSpeaking = false;
+    _flutterTts.stop();
   }
 }

@@ -46,6 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '558626168804',
     projectId: 'monitoring-air-pdam-8d0a8',
     authDomain: 'monitoring-air-pdam-8d0a8.firebaseapp.com',
+    databaseURL: 'https://monitoring-air-pdam-8d0a8-default-rtdb.firebaseio.com',
     storageBucket: 'monitoring-air-pdam-8d0a8.firebasestorage.app',
     measurementId: 'G-MBK1XV1RVK',
   );
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     appId: '1:558626168804:android:2491ca7259d087cf6ab1f1',
     messagingSenderId: '558626168804',
     projectId: 'monitoring-air-pdam-8d0a8',
+    databaseURL: 'https://monitoring-air-pdam-8d0a8-default-rtdb.firebaseio.com',
     storageBucket: 'monitoring-air-pdam-8d0a8.firebasestorage.app',
   );
 
@@ -63,6 +65,7 @@ class DefaultFirebaseOptions {
     appId: '1:558626168804:ios:066d5e5dff234d3e6ab1f1',
     messagingSenderId: '558626168804',
     projectId: 'monitoring-air-pdam-8d0a8',
+    databaseURL: 'https://monitoring-air-pdam-8d0a8-default-rtdb.firebaseio.com',
     storageBucket: 'monitoring-air-pdam-8d0a8.firebasestorage.app',
     iosClientId: '558626168804-4151pcivfi09rdm2e1b7cfjau8ofkc3t.apps.googleusercontent.com',
     iosBundleId: 'com.example.monitoringwaterapk',
@@ -73,6 +76,7 @@ class DefaultFirebaseOptions {
     appId: '1:558626168804:ios:066d5e5dff234d3e6ab1f1',
     messagingSenderId: '558626168804',
     projectId: 'monitoring-air-pdam-8d0a8',
+    databaseURL: 'https://monitoring-air-pdam-8d0a8-default-rtdb.firebaseio.com',
     storageBucket: 'monitoring-air-pdam-8d0a8.firebasestorage.app',
     iosClientId: '558626168804-4151pcivfi09rdm2e1b7cfjau8ofkc3t.apps.googleusercontent.com',
     iosBundleId: 'com.example.monitoringwaterapk',
@@ -84,6 +88,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '558626168804',
     projectId: 'monitoring-air-pdam-8d0a8',
     authDomain: 'monitoring-air-pdam-8d0a8.firebaseapp.com',
+    databaseURL: 'https://monitoring-air-pdam-8d0a8-default-rtdb.firebaseio.com',
     storageBucket: 'monitoring-air-pdam-8d0a8.firebasestorage.app',
     measurementId: 'G-40R2YBFV4M',
   );

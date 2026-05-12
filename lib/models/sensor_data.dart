@@ -73,11 +73,11 @@ extension WaterQualityStatusExtension on WaterQualityStatus {
   String get label {
     switch (this) {
       case WaterQualityStatus.drinkable:
-        return 'Layak Minum';
+        return 'Aman';
       case WaterQualityStatus.usable:
-        return 'Layak Tidak Minum';
+        return 'Waspada';
       case WaterQualityStatus.notDrinkable:
-        return 'Tidak Layak Minum';
+        return 'Bahaya';
       case WaterQualityStatus.unknown:
         return 'Tidak Diketahui';
     }
