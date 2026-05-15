@@ -158,88 +158,132 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildVerticalSensorGrid(SensorData data) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _miniHorizontalSensorCard('pH Air', data.ph.toStringAsFixed(1), 'pH',
-            AppColors.chartPH, Icons.water_drop_rounded),
-        const SizedBox(height: 10),
-        _miniHorizontalSensorCard(
-            'Kekeruhan',
-            data.turbidity.toStringAsFixed(1),
-            'NTU',
-            AppColors.chartTurbidity,
-            Icons.opacity_rounded),
-        const SizedBox(height: 10),
-        _miniHorizontalSensorCard(
-            'Suhu Air',
-            data.temperature.toStringAsFixed(1),
-            '°C',
-            AppColors.chartTemp,
-            Icons.thermostat_rounded),
+        Expanded(
+          child: _miniVerticalSensorCard('pH Air', data.ph.toStringAsFixed(1), 'pH',
+              AppColors.chartPH, Icons.water_drop_rounded),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _miniVerticalSensorCard('NTU', data.turbidity.toStringAsFixed(1), 'NTU',
+              AppColors.chartTurbidity, Icons.opacity_rounded),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _miniVerticalSensorCard('Suhu', data.temperature.toStringAsFixed(1), '°C',
+              AppColors.chartTemp, Icons.thermostat_rounded),
+        ),
       ],
     );
   }
 
-  Widget _miniHorizontalSensorCard(
+  Widget _miniVerticalSensorCard(
       String label, String value, String unit, Color color, IconData icon) {
+    // Menghitung progress untuk grafik batang
+    double numericValue = double.tryParse(value) ?? 0.0;
+    double progress = 0.0;
+    
+    if (label.contains('pH')) {
+      progress = (numericValue / 14.0).clamp(0.0, 1.0);
+    } else if (label.contains('NTU') || label.contains('Kekeruhan')) {
+      progress = (numericValue / 50.0).clamp(0.0, 1.0);
+    } else if (label.contains('Suhu')) {
+      progress = (numericValue / 40.0).clamp(0.0, 1.0);
+    }
+
     return GlassCard(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-      borderRadius: 12,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      borderRadius: 16,
       borderColor: color.withValues(alpha: 0.15),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // Value and Unit
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Text(
+            unit,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 8,
+              color: color.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Vertical Bar
+          Container(
+            height: 90, // Tinggi batang
+            width: 20, // Lebar batang
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withValues(alpha: 0.15)),
+            ),
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: progress),
+                  duration: const Duration(milliseconds: 1200),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, val, _) => FractionallySizedBox(
+                    heightFactor: val,
+                    widthFactor: 1.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [color.withValues(alpha: 0.4), color],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Icon and Label
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 16),
+            child: Icon(icon, color: color, size: 14),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 9,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      unit,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9,
-                        color: color.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 8,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w500,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

@@ -263,7 +263,7 @@ class _SensorLineChartState extends State<SensorLineChart> {
       case 'turbidity':
         return 50;
       case 'temperature':
-        return 50;
+        return 40;
       default:
         return 100;
     }
@@ -515,7 +515,7 @@ class SensorBarChart extends StatelessWidget {
     switch (sensorType) {
       case 'ph': return 14;
       case 'turbidity': return 50;
-      case 'temperature': return 50;
+      case 'temperature': return 40;
       default: return 100;
     }
   }

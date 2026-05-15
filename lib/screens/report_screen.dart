@@ -20,7 +20,7 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   int _selectedYear = DateTime.now().year;
   int _selectedMonth = DateTime.now().month;
-  int _selectedView = 0; // 0: Distribusi, 1: Tren
+  int _selectedView = 0; // 0: Statistik Status, 1: Tren
 
   static const List<String> _months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -263,7 +263,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _viewToggle(0, 'Distribusi', Icons.pie_chart_rounded, AppColors.accent),
+                      _viewToggle(0, 'Statistik Status', Icons.pie_chart_rounded, AppColors.accent),
                       const SizedBox(width: 8),
                       _viewToggle(1, 'pH Air', Icons.water_drop_rounded, AppColors.chartPH),
                       const SizedBox(width: 8),

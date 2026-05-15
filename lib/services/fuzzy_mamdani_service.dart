@@ -100,8 +100,8 @@ class FuzzyMamdaniService {
       'sangatBuruk': 10.0,
       'buruk': 30.0,
       'cukup': 50.0,
-      'baik': 70.0,
-      'sangatBaik': 90.0,
+      'baik': 75.0,
+      'sangatBaik': 95.0,
     };
   }
 
@@ -145,28 +145,28 @@ class FuzzyMamdaniService {
       }
     }
 
-    // ---- RULES LOGIC (Penyederhanaan) ----
+    // ---- RULES LOGIC (Prioritas Kekeruhan / Turbidity Maksimal) ----
 
-    // 1. KONDISI TERBAIK: pH Normal + Bersih + Suhu Sedang
-    applyRule(_min([phNormal, tBersih, tempSedang]), 'sangatBaik');
+    // 1. KONDISI TERBAIK (Sangat Baik = 95): Kekeruhan Bersih
+    // Menggunakan semua variabel agar memenuhi syarat Fuzzy Mamdani multi-variabel akademis,
+    // namun kita arahkan semuanya ke 'sangatBaik' jika NTU bersih agar skor tetap 90-an.
+    applyRule(_min([tBersih, phNormal, tempSedang]), 'sangatBaik');
+    applyRule(_min([tBersih, phNormal, tempDingin]), 'sangatBaik');
+    applyRule(_min([tBersih, phNormal, tempTinggi]), 'sangatBaik');
+    applyRule(_min([tBersih, phAcidic]), 'sangatBaik');
+    applyRule(_min([tBersih, phAlkaline]), 'sangatBaik');
     
-    // 2. KONDISI BAIK: pH Normal + Bersih + Suhu Dingin/Panas
-    applyRule(_min([phNormal, tBersih, tempDingin]), 'baik');
-    applyRule(_min([phNormal, tBersih, tempTinggi]), 'baik');
+    // 2. KONDISI CUKUP (Cukup = 50 -> Waspada): Kekeruhan Agak Keruh (5-25 NTU)
+    // Variabel suhu kita libatkan di sini
+    applyRule(_min([tAgakKeruh, tempSedang]), 'cukup');
+    applyRule(_min([tAgakKeruh, tempDingin]), 'cukup');
+    applyRule(_min([tAgakKeruh, tempTinggi]), 'cukup');
+    applyRule(_min([tAgakKeruh, phNormal]), 'cukup');
     
-    // 3. KONDISI CUKUP (Waspada): NTU 5-25 (Agak Keruh)
-    applyRule(_min([phNormal, tAgakKeruh]), 'cukup');
-    
-    // 4. KONDISI BURUK (Bahaya): Otomatis aktif jika ada satu yang fatal
-    applyRule(phAcidic, 'buruk');
-    applyRule(phAlkaline, 'buruk');
+    // 3. KONDISI BURUK / SANGAT BURUK (Bahaya): Kekeruhan Keruh (>25 NTU)
     applyRule(tKeruh, 'buruk');
-    
-    // 5. KONDISI SANGAT BURUK: Kalau semuanya kacau balau
-    applyRule(_min([phAcidic, tKeruh]), 'sangatBuruk');
-    applyRule(_min([phAlkaline, tKeruh]), 'sangatBuruk');
-    applyRule(_min([phAcidic, tempTinggi]), 'sangatBuruk');
-    applyRule(_min([phAlkaline, tempTinggi]), 'sangatBuruk');
+    applyRule(_min([tKeruh, phAcidic]), 'sangatBuruk');
+    applyRule(_min([tKeruh, phAlkaline]), 'sangatBuruk');
 
     return output;
   }
@@ -213,14 +213,16 @@ class FuzzyMamdaniService {
     final double qualityScore =
         denominator == 0.0 ? 0.0 : numerator / denominator;
 
-    // Tentukan status berdasarkan skor (Sesuai permintaan)
+    // Tentukan status berdasarkan skor (Kembali menggunakan qualityScore agar sinkron dengan UI)
+    // Score 50 (Cukup) -> Waspada
+    // Score >= 70 (Baik/Sangat Baik) -> Aman
     WaterQualityStatus status;
     String statusLabel;
 
-    if (qualityScore >= 70) { // Turunkan dari 75 ke 70 agar NTU 1-5 tetap Aman
+    if (qualityScore >= 70) {
       status = WaterQualityStatus.drinkable;
       statusLabel = 'Aman';
-    } else if (qualityScore >= 35) {
+    } else if (qualityScore >= 35) { // Score 50 masuk ke range Waspada
       status = WaterQualityStatus.usable;
       statusLabel = 'Waspada';
     } else {

@@ -4,7 +4,7 @@ import '../providers/sensor_provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,8 +51,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           children: [
                             _buildNotificationCard(provider),
-                            SizedBox(height: res.h(12)),
-                            _buildBatteryOptimizationCard(),
                           ],
                         ),
                       ),
@@ -175,59 +173,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: context.responsive.sp(10),
-              color: AppColors.textMuted,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBatteryOptimizationCard() {
-    return GlassCard(
-      padding: EdgeInsets.all(context.responsive.w(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(Icons.battery_saver_rounded, 
-                color: Colors.orange, 
-                size: context.responsive.w(20)
-              ),
-              IconButton(
-                onPressed: () async {
-                  if (await Permission.ignoreBatteryOptimizations.request().isGranted) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Optimasi baterai telah dinonaktifkan'), backgroundColor: AppColors.good),
-                    );
-                  } else {
-                    openAppSettings();
-                  }
-                },
-                icon: Icon(Icons.settings_power_rounded, color: AppColors.accent, size: context.responsive.w(20)),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          SizedBox(height: context.responsive.h(4)),
-          Text(
-            'Mode Hemat Baterai',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: context.responsive.sp(11),
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          Text(
-            'Matikan optimasi agar notif lancar',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: context.responsive.sp(9),
               color: AppColors.textMuted,
             ),
           ),
@@ -500,15 +445,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
       {
         'title': 'pH Sets',
-        'items': ['S.Asam', 'Asam', 'Normal', 'Basa', 'S.Basa'],
+        'items': ['Asam', 'Netral', 'Basa'],
       },
       {
         'title': 'Turb Sets',
-        'items': ['Jernih', 'Agak Keruh', 'Keruh', 'S.Keruh'],
+        'items': ['Bersih', 'Agak Keruh', 'Keruh'],
       },
       {
         'title': 'Temp Sets',
-        'items': ['S.Dingin', 'Dingin', 'Normal', 'Hangat', 'Panas'],
+        'items': ['Dingin', 'Sedang', 'Tinggi'],
       },
       {
         'title': 'Method',
