@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/sensor_provider.dart';
+import '../providers/theme_provider.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_helper.dart';
@@ -29,6 +30,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Consumer<SensorProvider>(
       builder: (context, provider, _) {
         final report = provider.generateMonthlyReport(_selectedYear, _selectedMonth);
@@ -45,7 +47,7 @@ class _ReportScreenState extends State<ReportScreen> {
             actions: [
               if (report != null && report.dailyData.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent),
+                  icon: Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent),
                   onPressed: () => _exportToPdf(report),
                 ),
             ],
@@ -63,13 +65,13 @@ class _ReportScreenState extends State<ReportScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('RINGKASAN STATUS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1)),
+                        Text('RINGKASAN STATUS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1)),
                         const SizedBox(height: 8),
                         _buildCompactSummary(report),
                         const SizedBox(height: 12),
                         _buildStatsRow(report),
                         const SizedBox(height: 16),
-                        const Text('RATA-RATA PARAMETER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1)),
+                        Text('RATA-RATA PARAMETER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1)),
                         const SizedBox(height: 10),
                         _buildParameterAverages(report),
                         const SizedBox(height: 16),
@@ -140,10 +142,16 @@ class _ReportScreenState extends State<ReportScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.1)],
+          colors: AppColors.isDarkMode
+              ? [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.1)]
+              : [AppColors.primary.withValues(alpha: 0.1), AppColors.accent.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AppColors.isDarkMode
+              ? AppColors.accent.withValues(alpha: 0.2)
+              : AppColors.primary.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -151,11 +159,11 @@ class _ReportScreenState extends State<ReportScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('STATUS RATA-RATA', style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              Text('STATUS RATA-RATA', style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1)),
               const SizedBox(height: 4),
               StatusBadge(status: report.overallStatus),
               const SizedBox(height: 8),
-              Text('${report.totalReadings} Data Teranalisis', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+              Text('${report.totalReadings} Data Teranalisis', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
             ],
           ),
           Column(
@@ -163,9 +171,13 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Text(
                 report.avgQualityScore.toStringAsFixed(1),
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 32, 
+                  fontWeight: FontWeight.bold, 
+                  color: AppColors.isDarkMode ? Colors.white : AppColors.primary,
+                ),
               ),
-              const Text('SKOR RATA-RATA', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+              Text('SKOR RATA-RATA', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -178,9 +190,9 @@ class _ReportScreenState extends State<ReportScreen> {
       children: [
         _miniStat('Baik', report.goodCount, AppColors.good),
         const SizedBox(width: 8),
-        _miniStat('Sdg', report.moderateCount, AppColors.warning),
+        _miniStat('Sedang', report.moderateCount, AppColors.warning),
         const SizedBox(width: 8),
-        _miniStat('Bhy', report.poorCount, AppColors.danger),
+        _miniStat('Bahaya', report.poorCount, AppColors.danger),
       ],
     );
   }
@@ -197,7 +209,7 @@ class _ReportScreenState extends State<ReportScreen> {
         child: Column(
           children: [
             Text('$count', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-            Text(label, style: const TextStyle(fontSize: 8, color: AppColors.textMuted)),
+            Text(label, style: TextStyle(fontSize: 8, color: AppColors.textMuted)),
           ],
         ),
       ),
@@ -219,7 +231,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return Column(
       children: [
         Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-        Text(label, style: const TextStyle(fontSize: 9, color: AppColors.textMuted)),
+        Text(label, style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
       ],
     );
   }
@@ -239,7 +251,7 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'ANALISIS GRAFIK BULANAN',
               style: TextStyle(
                 fontSize: 10,
@@ -340,12 +352,12 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildNoDataView() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.insert_chart_outlined_rounded, size: 64, color: AppColors.textMuted),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text('Belum ada data untuk periode ini', style: TextStyle(color: AppColors.textMuted)),
         ],
       ),

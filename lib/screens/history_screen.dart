@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/sensor_provider.dart';
+import '../providers/theme_provider.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_helper.dart';
@@ -21,6 +22,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Consumer<SensorProvider>(
       builder: (context, provider, _) {
         return Scaffold(
@@ -38,11 +40,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.filter_list, color: AppColors.accent),
+                icon: Icon(Icons.filter_list, color: AppColors.accent),
                 onPressed: () => _showFilterDialog(context, provider),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                icon: Icon(Icons.delete_outline, color: AppColors.danger),
                 onPressed: () => _confirmClear(context, provider),
               ),
             ],
@@ -61,7 +63,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.history, size: 64, color: AppColors.textMuted),
+            Icon(Icons.history, size: 64, color: AppColors.textMuted),
             SizedBox(height: context.responsive.h(12)),
             Text(
               'Belum ada data historis',
@@ -221,7 +223,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
+        title: Text(
           'Hapus Semua Data',
           style: TextStyle(
             fontFamily: 'Poppins',
@@ -229,7 +231,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: const Text(
+        content: Text(
           'Yakin ingin menghapus seluruh riwayat data sensor?',
           style: TextStyle(
             fontFamily: 'Poppins',
@@ -239,7 +241,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted)),
+            child: Text('Batal', style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -295,7 +297,7 @@ class _FilterSheetState extends State<_FilterSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Filter Data',
             style: TextStyle(
               fontFamily: 'Poppins',
@@ -325,7 +327,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Status:',
             style: TextStyle(
               fontFamily: 'Poppins',
@@ -366,9 +368,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 child: OutlinedButton(
                   onPressed: widget.onClear,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.textMuted),
+                    side: BorderSide(color: AppColors.textMuted),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Reset',
                     style: TextStyle(
                       fontFamily: 'Poppins',
@@ -415,7 +417,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           lastDate: DateTime.now(),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
-              colorScheme: const ColorScheme.dark(
+              colorScheme: ColorScheme.dark(
                 primary: AppColors.accent,
                 surface: AppColors.bgCard,
               ),
@@ -425,7 +427,7 @@ class _FilterSheetState extends State<_FilterSheet> {
         );
         if (picked != null) onPicked(picked);
       },
-      icon: const Icon(Icons.calendar_today, size: 14, color: AppColors.accent),
+      icon: Icon(Icons.calendar_today, size: 14, color: AppColors.accent),
       label: Text(
         date != null ? DateFormat('dd/MM/yy').format(date) : label,
         style: TextStyle(

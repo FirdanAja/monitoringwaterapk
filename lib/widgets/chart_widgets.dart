@@ -28,7 +28,7 @@ class _SensorLineChartState extends State<SensorLineChart> {
         : widget.data;
 
     if (displayData.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Menunggu data...',
           style: TextStyle(
@@ -48,13 +48,14 @@ class _SensorLineChartState extends State<SensorLineChart> {
     final color = _getColor();
     final minY = _getMinY();
     final maxY = _getMaxY();
+    final interval = _getInterval();
 
     return LineChart(
       LineChartData(
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: (maxY - minY) / 4,
+          horizontalInterval: interval,
           getDrawingHorizontalLine: (value) => FlLine(
             color: AppColors.textMuted.withValues(alpha: 0.15),
             strokeWidth: 1,
@@ -64,19 +65,47 @@ class _SensorLineChartState extends State<SensorLineChart> {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: interval,
               reservedSize: 40,
-              getTitlesWidget: (value, meta) => Text(
-                value.toStringAsFixed(1),
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  color: AppColors.textMuted,
-                  fontSize: 10,
-                ),
-              ),
+              getTitlesWidget: (value, meta) {
+                final label = widget.sensorType == 'ph' ? value.toStringAsFixed(1) : value.toStringAsFixed(0);
+                return Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    color: AppColors.textMuted,
+                    fontSize: 9,
+                  ),
+                );
+              },
             ),
           ),
-          bottomTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 22,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= displayData.length) return const SizedBox();
+                // Tampilkan label waktu setiap kelipatan 5 data agar tidak bertumpuk
+                if (index % 5 != 0 && index != displayData.length - 1) {
+                  return const SizedBox();
+                }
+                final d = displayData[index];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    DateFormat('HH:mm').format(d.timestamp),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: AppColors.textMuted,
+                      fontSize: 8,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           topTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
@@ -152,7 +181,7 @@ class _SensorLineChartState extends State<SensorLineChart> {
             label: HorizontalLineLabel(
               show: true,
               labelResolver: (_) => 'min',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
                 color: AppColors.warning,
                 fontSize: 9,
@@ -167,7 +196,7 @@ class _SensorLineChartState extends State<SensorLineChart> {
             label: HorizontalLineLabel(
               show: true,
               labelResolver: (_) => 'max',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
                 color: AppColors.warning,
                 fontSize: 9,
@@ -263,9 +292,22 @@ class _SensorLineChartState extends State<SensorLineChart> {
       case 'turbidity':
         return 50;
       case 'temperature':
-        return 40;
+        return 35;
       default:
         return 100;
+    }
+  }
+
+  double _getInterval() {
+    switch (widget.sensorType) {
+      case 'ph':
+        return 2.0;
+      case 'turbidity':
+        return 10.0;
+      case 'temperature':
+        return 5.0;
+      default:
+        return 20.0;
     }
   }
 }
@@ -287,7 +329,7 @@ class QualityBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (total == 0) {
-      return const Center(
+      return Center(
         child: Text(
           'Tidak ada data',
           style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted),
@@ -307,7 +349,7 @@ class QualityBarChart extends StatelessWidget {
               final labels = ['Layak Minum', 'Layak Tidak', 'Tidak Layak'];
               return BarTooltipItem(
                 '${labels[groupIndex]}\n${rod.toY.toInt()} data',
-                const TextStyle(
+                TextStyle(
                   fontFamily: 'Poppins',
                   color: AppColors.textPrimary,
                   fontSize: 12,
@@ -327,7 +369,7 @@ class QualityBarChart extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     labels[value.toInt()],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Poppins',
                       color: AppColors.textSecondary,
                       fontSize: 8,
@@ -400,7 +442,7 @@ class SensorBarChart extends StatelessWidget {
         : data;
 
     if (displayData.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Menunggu data...',
           style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted),
@@ -437,7 +479,7 @@ class SensorBarChart extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     DateFormat('HH:mm').format(d.timestamp),
-                    style: const TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 8),
+                    style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 8),
                   ),
                 );
               },
@@ -446,11 +488,15 @@ class SensorBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: _getInterval(),
               reservedSize: 30,
-              getTitlesWidget: (value, meta) => Text(
-                value.toStringAsFixed(0),
-                style: const TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 9),
-              ),
+              getTitlesWidget: (value, meta) {
+                final label = sensorType == 'ph' ? value.toStringAsFixed(1) : value.toStringAsFixed(0);
+                return Text(
+                  label,
+                  style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 9),
+                );
+              },
             ),
           ),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -459,7 +505,7 @@ class SensorBarChart extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: maxY / 4,
+          horizontalInterval: _getInterval(),
           getDrawingHorizontalLine: (v) => FlLine(color: AppColors.textMuted.withValues(alpha: 0.1), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
@@ -515,8 +561,21 @@ class SensorBarChart extends StatelessWidget {
     switch (sensorType) {
       case 'ph': return 14;
       case 'turbidity': return 50;
-      case 'temperature': return 40;
+      case 'temperature': return 35;
       default: return 100;
+    }
+  }
+
+  double _getInterval() {
+    switch (sensorType) {
+      case 'ph':
+        return 2.0;
+      case 'turbidity':
+        return 10.0;
+      case 'temperature':
+        return 5.0;
+      default:
+        return 20.0;
     }
   }
 }

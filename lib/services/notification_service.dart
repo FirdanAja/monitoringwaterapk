@@ -153,6 +153,8 @@ class NotificationService {
     }
   }
 
+  DateTime? _lastNotifTime;
+
   /// Kirim notifikasi berdasarkan hasil fuzzy logic
   Future<void> sendWaterQualityAlert({
     required SensorData data,
@@ -161,28 +163,30 @@ class NotificationService {
     if (kIsWeb) return;
     if (!_isInitialized) await initialize();
 
-    // HANYA kirim notifikasi jika statusnya BAHAYA (notDrinkable)
-    if (data.status == WaterQualityStatus.notDrinkable) {
-      // ID unik berbasis waktu agar notifikasi bertumpuk (tidak menimpa)
-      final uniqueId = DateTime.now().millisecondsSinceEpoch % 100000;
+    // Kirim notifikasi jika statusnya BAHAYA (notDrinkable) atau WASPADA (usable)
+    if (data.status == WaterQualityStatus.notDrinkable || data.status == WaterQualityStatus.usable) {
+      final uniqueId = data.status == WaterQualityStatus.notDrinkable ? 1001 : 1002;
 
-      await _showNotification(
-        id: uniqueId,
-        data: data,
-        fuzzyResult: fuzzyResult,
-      );
+      // Cegah spam notifikasi yang membuat Android nge-block popup (Rate Limiting).
+      // Munculkan popup maksimal setiap 10 detik atau jika ada perubahan drastis.
+      final now = DateTime.now();
+      if (_lastNotifTime == null || now.difference(_lastNotifTime!).inSeconds >= 10 || _lastAlertId != uniqueId) {
+        _lastNotifTime = now;
+        await _showNotification(
+          id: uniqueId,
+          data: data,
+          fuzzyResult: fuzzyResult,
+        );
+      }
 
       // Suara orang ngomong
       String speechText = "";
       bool isBahaya = data.status == WaterQualityStatus.notDrinkable;
-      if (data.turbidity > 25.0) {
-        speechText = isBahaya 
-          ? 'Peringatan, air keruh terdeteksi.'
-          : 'Waspada. Air agak keruh.';
-      } else if (data.status == WaterQualityStatus.usable) {
-        speechText = 'Waspada. Air agak keruh.';
+      
+      if (isBahaya) {
+        speechText = 'Peringatan, kualitas air dalam kondisi bahaya.';
       } else {
-        speechText = ""; // Diam kalau aman
+        speechText = ''; // Diam jika hanya waspada
       }
       
       _currentSpeechText = speechText;
@@ -195,7 +199,7 @@ class NotificationService {
 
       _speak(speechText);
     } else {
-      // Jika status membaik (Aman/Waspada), stop suara dan jangan kirim notif baru
+      // Jika status membaik (Aman), stop suara dan jangan kirim notif baru
       stopSpeechLoop();
     }
   }
@@ -227,46 +231,45 @@ class NotificationService {
 
 
 
+    String sensorDetails = 'pH: ${data.ph.toStringAsFixed(1)} | NTU: ${data.turbidity.toStringAsFixed(1)} | Suhu: ${data.temperature.toStringAsFixed(1)}°C';
+
     switch (data.status) {
       case WaterQualityStatus.notDrinkable:
         notifId = 1001;
-        title = '🚨 BAHAYA: Air Keruh';
-        body = 'Status: $fuzzyResult (${data.turbidity.toStringAsFixed(1)} NTU). '
-               'Harap periksa kondisi air segera.';
+        title = '🚨 BAHAYA: Kualitas Air $fuzzyResult';
+        body = 'Harap periksa kondisi air segera!\n$sensorDetails';
         break;
       case WaterQualityStatus.usable:
         notifId = 1002;
-        title = '⚠️ WASPADA: Air Agak Keruh';
-        body = 'Status: $fuzzyResult (${data.turbidity.toStringAsFixed(1)} NTU). '
-               'Kondisi air mulai menurun.';
+        title = '⚠️ WASPADA: Kualitas Air $fuzzyResult';
+        body = 'Kondisi air mulai menurun.\n$sensorDetails';
         break;
       case WaterQualityStatus.drinkable:
         notifId = 1003;
-        title = '✅ AMAN: Air Jernih';
-        body = 'Status: $fuzzyResult (${data.turbidity.toStringAsFixed(1)} NTU). '
-               'Kualitas air dalam kondisi baik.';
+        title = '✅ AMAN: Air $fuzzyResult';
+        body = 'Kualitas air dalam kondisi baik.\n$sensorDetails';
         break;
       default:
         notifId = 1004;
         title = 'Update Kualitas Air';
-        body = 'Status: ${data.status.label}.';
+        body = 'Status: ${data.status.label}.\n$sensorDetails';
 
     }
 
-    final isHighPriority = data.status == WaterQualityStatus.notDrinkable;
+    // Jadikan 'usable' (Waspada) dan 'notDrinkable' (Bahaya) sebagai prioritas tinggi agar muncul Pop-Up
+    final isHighPriority = data.status == WaterQualityStatus.notDrinkable || data.status == WaterQualityStatus.usable;
 
     final androidDetails = AndroidNotificationDetails(
       'water_quality_high_priority',
       'Peringatan Kualitas Air',
       channelDescription: 'Notifikasi penting untuk kondisi air buruk atau keruh',
-      importance: isHighPriority ? Importance.max : Importance.low,
-      priority: isHighPriority ? Priority.max : Priority.low,
-      icon: '@mipmap/launcher_icon',
+      importance: isHighPriority ? Importance.max : Importance.defaultImportance,
+      priority: isHighPriority ? Priority.max : Priority.defaultPriority,
       color: _getStatusColor(data.status),
       enableVibration: isHighPriority,
       playSound: isHighPriority,
       ticker: title,
-      category: isHighPriority ? AndroidNotificationCategory.alarm : AndroidNotificationCategory.status,
+      category: AndroidNotificationCategory.alarm,
       styleInformation: BigTextStyleInformation(
         body,
         contentTitle: title,
@@ -313,7 +316,6 @@ class NotificationService {
       channelDescription: 'Notifikasi unduhan laporan excel',
       importance: Importance.max,
       priority: Priority.high,
-      icon: '@mipmap/launcher_icon',
       color: const Color(0xFF00C6FF),
       styleInformation: BigTextStyleInformation(
         'Laporan $fileName siap dibuka. Klik untuk melihat detail kualitas air.',

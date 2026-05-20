@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/sensor_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/fuzzy_mamdani_service.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
@@ -42,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Consumer<SensorProvider>(
       builder: (context, provider, _) {
         final data = provider.currentData;
@@ -144,7 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Text(
             fuzzy?.recommendation ?? 'Menganalisis kualitas air...',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 9.5,
               color: AppColors.textSecondary,
@@ -191,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     } else if (label.contains('NTU') || label.contains('Kekeruhan')) {
       progress = (numericValue / 50.0).clamp(0.0, 1.0);
     } else if (label.contains('Suhu')) {
-      progress = (numericValue / 40.0).clamp(0.0, 1.0);
+      progress = (numericValue / 35.0).clamp(0.0, 1.0);
     }
 
     return GlassCard(
@@ -204,7 +206,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           // Value and Unit
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -275,7 +277,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 8,
               color: AppColors.textMuted,
@@ -340,7 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'TirtaSmart',
                   style: TextStyle(
                     fontFamily: 'Poppins',
@@ -352,7 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 if (provider.lastUpdateTime != null)
                   Text(
                     'Update: ${provider.lastUpdateTime!.hour.toString().padLeft(2, '0')}:${provider.lastUpdateTime!.minute.toString().padLeft(2, '0')}:${provider.lastUpdateTime!.second.toString().padLeft(2, '0')}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 8,
                       color: AppColors.accent,
@@ -360,7 +362,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   )
                 else
-                  const Text(
+                  Text(
                     'Dashboard Monitoring',
                     style: TextStyle(
                       fontFamily: 'Poppins',
@@ -386,10 +388,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(Icons.analytics_outlined, color: AppColors.accent, size: 14),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               'Analisis Sistem',
               style: TextStyle(
@@ -416,23 +418,36 @@ class _DashboardScreenState extends State<DashboardScreen>
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? color.withValues(alpha: 0.12)
-                      : AppColors.bgSurface.withValues(alpha: 0.3),
+                      ? color.withValues(alpha: AppColors.isDarkMode ? 0.12 : 0.08)
+                      : AppColors.isDarkMode
+                          ? AppColors.bgSurface.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isActive
                         ? color.withValues(alpha: 0.3)
-                        : Colors.white.withValues(alpha: 0.05),
+                        : AppColors.isDarkMode
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.06),
                     width: 1,
                   ),
                   boxShadow: isActive
-                      ? const [
+                      ? [
                           BoxShadow(
-                              color: Color(0x1A000000),
+                              color: AppColors.isDarkMode
+                                  ? const Color(0x1A000000)
+                                  : color.withValues(alpha: 0.1),
                               blurRadius: 4,
                               spreadRadius: 0),
                         ]
-                      : null,
+                      : AppColors.isDarkMode
+                          ? null
+                          : [
+                              BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 4,
+                                  spreadRadius: 0),
+                            ],
                 ),
                 child: Column(
                   children: [
@@ -466,7 +481,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                         width: 20,
                         child: LinearProgressIndicator(
                           value: value,
-                          backgroundColor: Colors.white.withValues(alpha: 0.05),
+                          backgroundColor: AppColors.isDarkMode
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.06),
                           color: isActive ? color : Colors.transparent,
                         ),
                       ),
@@ -523,7 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       const SizedBox(width: 6),
                       Text(
                         _selectedChartStyle == 0 ? 'Garis' : 'Batang',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 10,
                             color: AppColors.accent,
@@ -537,8 +554,15 @@ class _DashboardScreenState extends State<DashboardScreen>
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.2),
+                  color: AppColors.isDarkMode
+                      ? Colors.black.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: AppColors.isDarkMode
+                        ? Colors.white.withValues(alpha: 0.02)
+                        : Colors.black.withValues(alpha: 0.03),
+                  ),
                 ),
                 child: Row(
                   children: List.generate(3, (index) {
@@ -558,7 +582,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               ? [
                                   BoxShadow(
                                       color: chartColors[index]
-                                          .withValues(alpha: 0.3),
+                                          .withValues(alpha: AppColors.isDarkMode ? 0.3 : 0.15),
                                       blurRadius: 8,
                                       spreadRadius: 1),
                                 ]
@@ -570,9 +594,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                             fontFamily: 'Poppins',
                             fontSize: 10,
                             fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.w500,
-                            color:
-                                isSelected ? Colors.white : AppColors.textMuted,
+                                isSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : (AppColors.isDarkMode
+                                    ? AppColors.textMuted
+                                    : AppColors.textSecondary),
                           ),
                         ),
                       ),
@@ -597,12 +624,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildLoadingView() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(color: AppColors.accent),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text('Menunggu data...',
               style: TextStyle(
                   fontFamily: 'Poppins', color: AppColors.textSecondary)),

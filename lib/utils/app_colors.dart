@@ -1,53 +1,61 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  static bool isDarkMode = true;
+
   // Primary palette - deep ocean blue
-  static const Color primary = Color(0xFF0D47A1);
-  static const Color primaryLight = Color(0xFF1565C0);
-  static const Color primaryDark = Color(0xFF0A2F6B);
+  static Color get primary => isDarkMode ? const Color(0xFF0D47A1) : const Color(0xFF1565C0);
+  static Color get primaryLight => isDarkMode ? const Color(0xFF1565C0) : const Color(0xFF1976D2);
+  static Color get primaryDark => isDarkMode ? const Color(0xFF0A2F6B) : const Color(0xFF0D47A1);
 
   // Accent - cyan/teal water
-  static const Color accent = Color(0xFF00BCD4);
-  static const Color accentLight = Color(0xFF4DD0E1);
-  static const Color accentDark = Color(0xFF0097A7);
+  static Color get accent => const Color(0xFF00BCD4);
+  static Color get accentLight => const Color(0xFF4DD0E1);
+  static Color get accentDark => const Color(0xFF0097A7);
 
-  // Background (dark mode)
-  static const Color bgDark = Color(0xFF0A0E1A);
-  static const Color bgCard = Color(0xFF111827);
-  static const Color bgCardLight = Color(0xFF1C2536);
-  static const Color bgSurface = Color(0xFF162032);
+  // Background
+  static Color get bgDark => isDarkMode ? const Color(0xFF0A0E1A) : const Color(0xFFF8FAFC); // Elegant slate 50
+  static Color get bgCard => isDarkMode ? const Color(0xFF111827) : const Color(0xFFFFFFFF); // Pure white in light mode
+  static Color get bgCardLight => isDarkMode ? const Color(0xFF1C2536) : const Color(0xFFF1F5F9);
+  static Color get bgSurface => isDarkMode ? const Color(0xFF162032) : const Color(0xFFF1F5F9);
 
   // Text
-  static const Color textPrimary = Color(0xFFE8F4FD);
-  static const Color textSecondary = Color(0xFF90CAF9);
-  static const Color textMuted = Color(0xFF546E7A);
+  static Color get textPrimary => isDarkMode ? const Color(0xFFE8F4FD) : const Color(0xFF0F172A); // Slate 900
+  static Color get textSecondary => isDarkMode ? const Color(0xFF90CAF9) : const Color(0xFF334155); // Slate 700
+  static Color get textMuted => isDarkMode ? const Color(0xFF546E7A) : const Color(0xFF64748B); // Slate 500
 
   // Sensor status colors
-  static const Color good = Color(0xFF00E676);
-  static const Color warning = Color(0xFFFFD600);
-  static const Color danger = Color(0xFFFF1744);
-  static const Color neutral = Color(0xFF40C4FF);
+  static Color get good => const Color(0xFF00E676);
+  static Color get warning => isDarkMode ? const Color(0xFFFFD600) : const Color(0xFFF59E0B); // Amber 500
+  static Color get danger => const Color(0xFFFF1744);
+  static Color get neutral => const Color(0xFF40C4FF);
 
   // Chart colors
-  static const Color chartPH = Color(0xFF7C4DFF);
-  static const Color chartTurbidity = Color(0xFF00BFA5);
-  static const Color chartTemp = Color(0xFFFF6D00);
+  static Color get chartPH => const Color(0xFF7C4DFF);
+  static Color get chartTurbidity => const Color(0xFF00BFA5);
+  static Color get chartTemp => const Color(0xFFFF6D00);
 
-  // Gradient
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF0D47A1), Color(0xFF00BCD4)],
+  // Gradients
+  static LinearGradient get primaryGradient => LinearGradient(
+    colors: isDarkMode 
+      ? [const Color(0xFF0D47A1), const Color(0xFF00BCD4)]
+      : [const Color(0xFF1565C0), const Color(0xFF00E5FF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient bgGradient = LinearGradient(
-    colors: [Color(0xFF0A0E1A), Color(0xFF0D1B2E)],
+  static LinearGradient get bgGradient => LinearGradient(
+    colors: isDarkMode
+      ? [const Color(0xFF0A0E1A), const Color(0xFF0D1B2E)]
+      : [const Color(0xFFF8FAFC), const Color(0xFFE2E8F0)], // Soft slate gradient
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
-  static const LinearGradient cardGradient = LinearGradient(
-    colors: [Color(0xFF111827), Color(0xFF1C2536)],
+  static LinearGradient get cardGradient => LinearGradient(
+    colors: isDarkMode
+      ? [const Color(0xFF111827), const Color(0xFF1C2536)]
+      : [const Color(0xFFFFFFFF), const Color(0xFFF9FAFB)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

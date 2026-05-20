@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/sensor_provider.dart';
+import '../providers/theme_provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/sensor_widgets.dart';
+import '../services/notification_service.dart';
+import '../models/sensor_data.dart';
 
 
 class SettingsScreen extends StatefulWidget {
@@ -25,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Consumer<SensorProvider>(
       builder: (context, provider, _) {
         final res = context.responsive;
@@ -42,25 +46,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildHeader(),
                   SizedBox(height: res.h(16)),
                   
-                  // Top Row: Notifications & Standards
+                  // 1. Toggles Row (Notification & Theme Mode side-by-side)
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        flex: 4,
-                        child: Column(
-                          children: [
-                            _buildNotificationCard(provider),
-                          ],
-                        ),
+                        child: _buildNotificationCard(provider),
                       ),
                       SizedBox(width: res.w(12)),
                       Expanded(
-                        flex: 5,
-                        child: _buildStandardsCard(provider),
+                        child: _buildThemeModeCard(),
                       ),
                     ],
                   ),
+                  
+                  SizedBox(height: res.h(12)),
+                  
+                  // 2. Standards Card (Below them, full width)
+                  _buildStandardsCard(provider),
                   
                   SizedBox(height: res.h(16)),
                   
@@ -168,43 +170,155 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: AppColors.textPrimary,
             ),
           ),
-          Text(
-            'Alert kualitas air',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: context.responsive.sp(10),
-              color: AppColors.textMuted,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Alert kualitas air',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(9.5),
+                  color: AppColors.textMuted,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  final testData = SensorData(
+                    ph: 4.5,
+                    turbidity: 35.0,
+                    temperature: 24.5,
+                    timestamp: DateTime.now(),
+                    status: WaterQualityStatus.notDrinkable,
+                    fuzzyResult: 'Sangat Buruk',
+                    qualityScore: 15.0,
+                  );
+                  provider.updateSettings(notifications: true);
+                  setState(() => _notifEnabled = true);
+                  NotificationService().sendWaterQualityAlert(
+                    data: testData,
+                    fuzzyResult: 'Sangat Buruk',
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Uji Coba',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: context.responsive.sp(8),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Widget _buildThemeModeCard() {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        final isDark = themeProvider.isDarkMode;
+        return GlassCard(
+          padding: EdgeInsets.all(context.responsive.w(12)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(
+                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: AppColors.accent,
+                    size: context.responsive.w(20),
+                  ),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: isDark,
+                      onChanged: (v) {
+                        themeProvider.toggleTheme();
+                      },
+                      activeThumbColor: AppColors.accent,
+                      activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: context.responsive.h(4)),
+              Text(
+                'Mode Gelap',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(12),
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                isDark ? 'Tema Gelap Aktif' : 'Tema Terang Aktif',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: context.responsive.sp(10),
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildStandardsCard(SensorProvider provider) {
+    final res = context.responsive;
     return GlassCard(
-      padding: EdgeInsets.all(context.responsive.w(10)),
-      child: Column(
+      padding: EdgeInsets.all(res.w(12)),
+      child: Row(
         children: [
-          _buildEditableStandard(
-            'Batas pH', 
-            '${provider.phAsamLimit} - ${provider.phNormalLimit}', 
-            AppColors.chartPH,
-            () => _showEditThresholdDialog('pH_Detailed', provider)
+          Expanded(
+            child: _buildEditableStandard(
+              'Batas pH', 
+              '${provider.phAsamLimit} - ${provider.phNormalLimit}', 
+              AppColors.chartPH,
+              () => _showEditThresholdDialog('pH_Detailed', provider)
+            ),
           ),
-          const Divider(color: Colors.white10, height: 10),
-          _buildEditableStandard(
-            'Batas NTU', 
-            '${provider.turbJernihLimit} - ${provider.turbAgakKeruhLimit}', 
-            AppColors.chartTurbidity,
-            () => _showEditThresholdDialog('Turbidity_Detailed', provider)
+          Container(
+            width: 1,
+            height: res.h(45),
+            color: AppColors.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            margin: EdgeInsets.symmetric(horizontal: res.w(4)),
           ),
-          const Divider(color: Colors.white10, height: 10),
-          _buildEditableStandard(
-            'Batas Suhu', 
-            '${provider.tempDinginLimit} - ${provider.tempNormalLimit}', 
-            AppColors.chartTemp,
-            () => _showEditThresholdDialog('Temperature_Detailed', provider)
+          Expanded(
+            child: _buildEditableStandard(
+              'Batas NTU', 
+              '${provider.turbJernihLimit} - ${provider.turbAgakKeruhLimit}', 
+              AppColors.chartTurbidity,
+              () => _showEditThresholdDialog('Turbidity_Detailed', provider)
+            ),
+          ),
+          Container(
+            width: 1,
+            height: res.h(45),
+            color: AppColors.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            margin: EdgeInsets.symmetric(horizontal: res.w(4)),
+          ),
+          Expanded(
+            child: _buildEditableStandard(
+              'Batas Suhu', 
+              '${provider.tempDinginLimit} - ${provider.tempNormalLimit}', 
+              AppColors.chartTemp,
+              () => _showEditThresholdDialog('Temperature_Detailed', provider)
+            ),
           ),
         ],
       ),
@@ -215,51 +329,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: context.responsive.sp(11),
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  'Ketuk untuk ubah',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: context.responsive.sp(7),
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: context.responsive.sp(10),
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: color.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: context.responsive.sp(11),
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: context.responsive.sp(10),
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Ketuk untuk ubah',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: context.responsive.sp(7),
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -314,18 +423,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(fontFamily: 'Poppins', color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(title, style: TextStyle(fontFamily: 'Poppins', color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: controller1,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 labelText: label1,
-                labelStyle: const TextStyle(color: AppColors.textMuted),
-                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+                labelStyle: TextStyle(color: AppColors.textMuted),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.2))),
               ),
             ),
             if (isRange) ...[
@@ -333,11 +442,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               TextField(
                 controller: controller2,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: label2,
-                  labelStyle: const TextStyle(color: AppColors.textMuted),
-                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+                  labelStyle: TextStyle(color: AppColors.textMuted),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.2))),
                 ),
               ),
             ],
@@ -346,7 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+            child: Text('Batal', style: TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -369,7 +478,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ambang batas berhasil diperbarui'), backgroundColor: AppColors.good),
+                  SnackBar(content: const Text('Ambang batas berhasil diperbarui'), backgroundColor: AppColors.good),
                 );
               }
             },
