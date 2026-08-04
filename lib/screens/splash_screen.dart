@@ -26,8 +26,8 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _glowPulse;
   late Animation<double> _shimmer;
 
-  final List<_Bubble> _bubbles = [];      // bubble di zona air
-  final List<_Bubble> _atmoBubbles = [];   // bubble atmosfer full-screen
+  final List<_Bubble> _bubbles = [];
+  final List<_Bubble> _atmoBubbles = [];
   final math.Random _random = math.Random(12);
 
   @override
@@ -133,7 +133,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _generateBubbles() {
-    // Bubble zona air (bawah layar) — lebih besar & opaque
     for (int i = 0; i < 35; i++) {
       _bubbles.add(_Bubble(
         x: _random.nextDouble(),
@@ -145,7 +144,6 @@ class _SplashScreenState extends State<SplashScreen>
         wobble: _random.nextDouble() * 0.04 + 0.01,
       ));
     }
-    // Bubble atmosfer (naik dari bawah ke atas layar) — kecil & halus
     for (int i = 0; i < 20; i++) {
       _atmoBubbles.add(_Bubble(
         x: _random.nextDouble(),
@@ -180,7 +178,6 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── 1. Background gradient (dark deep ocean) ──
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -196,7 +193,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── 2. Radial glow top-center ──
           AnimatedBuilder(
             animation: _glowPulse,
             builder: (_, __) => Positioned(
@@ -220,12 +216,10 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── 3. Constellation (stars) ──
           RepaintBoundary(
             child: CustomPaint(painter: _StarsPainter()),
           ),
 
-          // ── 4. Water fill + waves ──
           AnimatedBuilder(
             animation: Listenable.merge([_waveController, _fillController]),
             builder: (_, __) => CustomPaint(
@@ -236,7 +230,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── 5. Bubbles ──
           AnimatedBuilder(
             animation: _bubbleController,
             builder: (_, __) => CustomPaint(
@@ -248,13 +241,11 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── 6. Main content ──
           SafeArea(
             child: Column(
               children: [
                 SizedBox(height: screenH * 0.10),
 
-                // ──── LOGO (full, no circular clip) ────
                 AnimatedBuilder(
                   animation: _glowPulse,
                   builder: (_, __) => FadeTransition(
@@ -264,7 +255,6 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Outer glow ring
                           Container(
                             width: 170,
                             height: 170,
@@ -286,7 +276,6 @@ class _SplashScreenState extends State<SplashScreen>
                               ],
                             ),
                           ),
-                          // Logo image (full, no clip)
                           Image.asset(
                             'assets/icons/logo.png',
                             width: 150,
@@ -306,7 +295,6 @@ class _SplashScreenState extends State<SplashScreen>
 
                 SizedBox(height: screenH * 0.04),
 
-                // ──── APP NAME with shimmer ────
                 SlideTransition(
                   position: _titleSlide,
                   child: FadeTransition(
@@ -343,7 +331,6 @@ class _SplashScreenState extends State<SplashScreen>
 
                         const SizedBox(height: 10),
 
-                        // Divider line with dot
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -397,12 +384,10 @@ class _SplashScreenState extends State<SplashScreen>
 
                 const SizedBox(height: 18),
 
-                // ──── SUBTITLE ────
                 FadeTransition(
                   opacity: _subtitleFade,
                   child: Column(
                     children: [
-                      // Badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 22, vertical: 9),
@@ -447,14 +432,12 @@ class _SplashScreenState extends State<SplashScreen>
 
                 const Spacer(),
 
-                // ──── BOTTOM LOADING SECTION ────
                 FadeTransition(
                   opacity: _subtitleFade,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 50),
                     child: Column(
                       children: [
-                        // Scanning bar
                         SizedBox(
                           width: 160,
                           child: Stack(
@@ -531,9 +514,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// PAINTERS
-// ──────────────────────────────────────────────────────────────
 
 class _Bubble {
   final double x;
@@ -542,7 +522,7 @@ class _Bubble {
   final double speed;
   final double opacity;
   final double phase;
-  final double wobble; // amplitude goyang horizontal
+  final double wobble;
 
   const _Bubble({
     required this.x,
@@ -576,7 +556,6 @@ class _StarsPainter extends CustomPainter {
     final paint = Paint();
     for (int i = 0; i < _positions.length; i++) {
       final p = _positions[i];
-      // Stars only in upper half
       if (p.dy > 0.55) continue;
       paint.color =
           Colors.white.withValues(alpha: 0.12 + _sizes[i] * 0.12);
@@ -667,7 +646,6 @@ class _BubblePainter extends CustomPainter {
     _drawAtmoBubbles(canvas, size);
   }
 
-  /// Gelembung zona air — besar, glowing, wobble
   void _drawWaterBubbles(Canvas canvas, Size size) {
     final stroke = Paint()
       ..style = PaintingStyle.stroke
@@ -679,9 +657,8 @@ class _BubblePainter extends CustomPainter {
 
     for (final b in bubbles) {
       final rawY = (b.startY - progress * b.speed * 2.0 + b.phase) % 1.0;
-      if (rawY < 0.68) continue; // hanya di zona air
+      if (rawY < 0.68) continue;
 
-      // Goyang horizontal sinusoidal
       final wobbleX = math.sin(
               (progress * 2 * math.pi * 3) + b.phase * 2 * math.pi) *
           b.wobble *
@@ -689,25 +666,20 @@ class _BubblePainter extends CustomPainter {
       final px = (b.x * size.width + wobbleX).clamp(b.radius, size.width - b.radius);
       final py = rawY * size.height;
 
-      // Fade masuk dari bawah, fade keluar mendekati permukaan air
       final fadeIn  = ((rawY - 0.68) / 0.07).clamp(0.0, 1.0);
       final fadeOut = (1.0 - ((rawY - 0.92) / 0.08).clamp(0.0, 1.0));
       final alpha   = fadeIn * fadeOut * b.opacity;
       if (alpha <= 0) continue;
 
-      // Glow biru cyan di balik bubble
       glow.color = const Color(0xFF00E5FF).withValues(alpha: (alpha * 0.25).clamp(0, 1));
       canvas.drawCircle(Offset(px, py), b.radius * 1.6, glow);
 
-      // Outline bubble
       stroke.color = const Color(0xFF80DEEA).withValues(alpha: (alpha * 0.75).clamp(0, 1));
       canvas.drawCircle(Offset(px, py), b.radius, stroke);
 
-      // Inner fill transparan
       highlight.color = const Color(0xFF00BCD4).withValues(alpha: (alpha * 0.08).clamp(0, 1));
       canvas.drawCircle(Offset(px, py), b.radius, highlight);
 
-      // Highlight putih kecil (refleksi cahaya)
       highlight.color = Colors.white.withValues(alpha: (alpha * 0.6).clamp(0, 1));
       canvas.drawCircle(
         Offset(px - b.radius * 0.30, py - b.radius * 0.30),
@@ -715,7 +687,6 @@ class _BubblePainter extends CustomPainter {
         highlight,
       );
 
-      // Highlight sekunder (kanan bawah, lebih kecil)
       highlight.color = Colors.white.withValues(alpha: (alpha * 0.20).clamp(0, 1));
       canvas.drawCircle(
         Offset(px + b.radius * 0.35, py + b.radius * 0.25),
@@ -725,7 +696,6 @@ class _BubblePainter extends CustomPainter {
     }
   }
 
-  /// Gelembung atmosfer — kecil, naik pelan di seluruh layar
   void _drawAtmoBubbles(Canvas canvas, Size size) {
     final stroke = Paint()
       ..style = PaintingStyle.stroke
@@ -742,7 +712,6 @@ class _BubblePainter extends CustomPainter {
       final px = (b.x * size.width + wobbleX).clamp(b.radius, size.width - b.radius);
       final py = rawY * size.height;
 
-      // Fade di tepi atas & bawah layar
       final fadeEdge = (rawY < 0.1
               ? rawY / 0.1
               : rawY > 0.9

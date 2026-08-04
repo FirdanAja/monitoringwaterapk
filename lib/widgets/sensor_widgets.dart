@@ -198,7 +198,6 @@ class AnimatedSensorValue extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          // Progress bar
           Stack(
             children: [
               Container(
@@ -241,14 +240,13 @@ class QualityGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
-    final size = context.responsive.w(120); // Increased size slightly for better visibility
+    final size = context.responsive.w(120);
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer Ring Glow
           Container(
             width: size * 0.9,
             height: size * 0.9,
@@ -263,7 +261,6 @@ class QualityGauge extends StatelessWidget {
               ],
             ),
           ),
-          // Main Progress Ring
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0, end: score / 100),
             duration: const Duration(milliseconds: 1500),
@@ -280,7 +277,6 @@ class QualityGauge extends StatelessWidget {
               ),
             ),
           ),
-          // Inner Ring (Decorative)
           Container(
             width: size * 0.7,
             height: size * 0.7,
@@ -292,7 +288,6 @@ class QualityGauge extends StatelessWidget {
               ),
             ),
           ),
-          // Score Text
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -418,7 +413,6 @@ class AwesomeWaterLogo extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background ripple effect
           Container(
             width: size * 0.7,
             height: size * 0.7,
@@ -427,13 +421,11 @@ class AwesomeWaterLogo extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          // Main Icon
           Icon(
             icon ?? Icons.water_drop_rounded,
             color: Colors.white,
             size: size * 0.6,
           ),
-          // Subtle highlight
           Positioned(
             top: size * 0.15,
             right: size * 0.15,

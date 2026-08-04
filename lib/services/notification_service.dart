@@ -8,6 +8,15 @@ import 'package:open_filex/open_filex.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models/sensor_data.dart';
 
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) async {
+  debugPrint('Background Notification tapped with payload: ${response.payload}');
+  if (response.payload != null && (response.payload!.endsWith('.xlsx') || response.payload!.endsWith('.pdf'))) {
+    debugPrint('Attempting to open file in background: ${response.payload}');
+    await OpenFilex.open(response.payload!);
+  }
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -21,7 +30,6 @@ class NotificationService {
   bool _isSpeaking = false;
   String _currentSpeechText = "";
 
-  // Data untuk mengulang notifikasi bersama suara
   int? _lastAlertId;
   SensorData? _lastAlertData;
   String? _lastFuzzyResult;
@@ -54,15 +62,14 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
-    // Request permission Android 13+
     await _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
-    // Buat Channel secara eksplisit untuk Android 8+ (PENTING untuk Background Service)
     final androidImplementation = _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
@@ -91,12 +98,10 @@ class NotificationService {
       );
     }
 
-    // Inisialisasi TTS
     await _flutterTts.setLanguage("id-ID");
     await _flutterTts.setPitch(1.0);
     await _flutterTts.setSpeechRate(0.5);
 
-    // Looping logic: saat bicara selesai, cek apakah harus mengulang
     _flutterTts.setStartHandler(() {
       _isSpeaking = true;
     });
@@ -106,7 +111,6 @@ class NotificationService {
       if (_shouldLoopSpeech && _currentSpeechText.isNotEmpty) {
         await _flutterTts.speak(_currentSpeechText);
         
-        // Re-show notification agar "berulang" bersama suaranya
         if (_lastAlertId != null && _lastAlertData != null && _lastFuzzyResult != null) {
           await _showNotification(
             id: _lastAlertId!,
@@ -127,10 +131,8 @@ class NotificationService {
   Future<void> _speak(String text) async {
     if (kIsWeb) return;
     
-    // Jika teks sama dan sedang bicara, abaikan agar tidak tumpang tindih
     if (_isSpeaking && _currentSpeechText == text) return;
     
-    // Stop dulu yang lama jika ada, baru mulai yang baru
     if (_isSpeaking) {
       await _flutterTts.stop();
     }
@@ -143,11 +145,10 @@ class NotificationService {
   void _onNotificationTapped(NotificationResponse response) async {
     debugPrint('Notification tapped with payload: ${response.payload}');
     
-    // Stop suara saat notifikasi diklik/direspon
     stopSpeechLoop();
 
-    if (response.payload != null && response.payload!.endsWith('.xlsx')) {
-      debugPrint('Attempting to open Excel file: ${response.payload}');
+    if (response.payload != null && (response.payload!.endsWith('.xlsx') || response.payload!.endsWith('.pdf'))) {
+      debugPrint('Attempting to open file: ${response.payload}');
       final result = await OpenFilex.open(response.payload!);
       debugPrint('Open file result: ${result.message} (Type: ${result.type})');
     }
@@ -155,7 +156,6 @@ class NotificationService {
 
   DateTime? _lastNotifTime;
 
-  /// Kirim notifikasi berdasarkan hasil fuzzy logic
   Future<void> sendWaterQualityAlert({
     required SensorData data,
     required String fuzzyResult,
@@ -163,12 +163,9 @@ class NotificationService {
     if (kIsWeb) return;
     if (!_isInitialized) await initialize();
 
-    // Kirim notifikasi jika statusnya BAHAYA (notDrinkable) atau WASPADA (usable)
     if (data.status == WaterQualityStatus.notDrinkable || data.status == WaterQualityStatus.usable) {
       final uniqueId = data.status == WaterQualityStatus.notDrinkable ? 1001 : 1002;
 
-      // Cegah spam notifikasi yang membuat Android nge-block popup (Rate Limiting).
-      // Munculkan popup maksimal setiap 10 detik atau jika ada perubahan drastis.
       final now = DateTime.now();
       if (_lastNotifTime == null || now.difference(_lastNotifTime!).inSeconds >= 10 || _lastAlertId != uniqueId) {
         _lastNotifTime = now;
@@ -179,32 +176,28 @@ class NotificationService {
         );
       }
 
-      // Suara orang ngomong
       String speechText = "";
       bool isBahaya = data.status == WaterQualityStatus.notDrinkable;
       
       if (isBahaya) {
         speechText = 'Peringatan, kualitas air dalam kondisi bahaya.';
       } else {
-        speechText = ''; // Diam jika hanya waspada
+        speechText = '';
       }
       
       _currentSpeechText = speechText;
       _shouldLoopSpeech = true;
       
-      // Simpan data untuk pengulangan di completion handler
       _lastAlertId = uniqueId;
       _lastAlertData = data;
       _lastFuzzyResult = fuzzyResult;
 
       _speak(speechText);
     } else {
-      // Jika status membaik (Aman), stop suara dan jangan kirim notif baru
       stopSpeechLoop();
     }
   }
 
-  /// Helper untuk menampilkan notifikasi
   Future<void> _showNotification({
     required int id,
     required SensorData data,
@@ -256,7 +249,6 @@ class NotificationService {
 
     }
 
-    // Jadikan 'usable' (Waspada) dan 'notDrinkable' (Bahaya) sebagai prioritas tinggi agar muncul Pop-Up
     final isHighPriority = data.status == WaterQualityStatus.notDrinkable || data.status == WaterQualityStatus.usable;
 
     final androidDetails = AndroidNotificationDetails(
@@ -302,7 +294,6 @@ class NotificationService {
     }
   }
 
-  /// Kirim notifikasi saat file berhasil diunduh
   Future<void> showFileDownloadedNotification({
     required String fileName,
     required String filePath,
@@ -331,20 +322,18 @@ class NotificationService {
 
     await _flutterLocalNotificationsPlugin.show(
       2001,
-      '✅ Laporan Berhasil Diunduh',
-      'File $fileName telah tersimpan di folder Download.',
+      '✅ Laporan Berhasil Dibuat',
+      'File $fileName telah berhasil disimpan. Tap untuk membuka.',
       NotificationDetails(android: androidDetails, iOS: iosDetails),
       payload: filePath,
     );
   }
 
-  /// Batalkan semua notifikasi
   Future<void> cancelAll() async {
     stopSpeechLoop();
     await _flutterLocalNotificationsPlugin.cancelAll();
   }
 
-  /// Berhenti bicara dan stop loop
   void stopSpeechLoop() {
     _shouldLoopSpeech = false;
     _currentSpeechText = "";

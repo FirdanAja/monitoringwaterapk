@@ -21,7 +21,7 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   int _selectedYear = DateTime.now().year;
   int _selectedMonth = DateTime.now().month;
-  int _selectedView = 0; // 0: Statistik Status, 1: Tren
+  int _selectedView = 0;
 
   static const List<String> _months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -76,7 +76,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         _buildParameterAverages(report),
                         const SizedBox(height: 16),
                         Expanded(child: _buildInteractiveChartSection(report)),
-                        const SizedBox(height: 80), // Balanced space for floating nav
+                        const SizedBox(height: 80),
                       ],
                     ),
                   ),
@@ -149,6 +149,9 @@ class _ReportScreenState extends State<ReportScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.isDarkMode
+       
+       
+       
               ? AppColors.accent.withValues(alpha: 0.2)
               : AppColors.primary.withValues(alpha: 0.2),
         ),
@@ -268,7 +271,6 @@ class _ReportScreenState extends State<ReportScreen> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                // Scrollable Toggles with Icons
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
@@ -387,7 +389,6 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
         );
         
-        // Show system notification
         await NotificationService().showFileDownloadedNotification(
           fileName: fileName,
           filePath: file.path,

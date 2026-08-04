@@ -14,7 +14,6 @@ class SensorProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
-  // Current data
   SensorData? _currentData;
   ConnectionStatus _connectionStatus = ConnectionStatus.disconnected;
   bool _isLoading = false;
@@ -24,29 +23,24 @@ class SensorProvider extends ChangeNotifier {
   StreamSubscription<DatabaseEvent>? _statusSubscription;
   Timer? _heartbeatTimer;
 
-  // Historical data
   List<SensorData> _historyData = [];
   List<SensorData> _filteredHistory = [];
 
-  // Settings
   bool _notificationsEnabled = true;
 
-  // Thresholds (Dynamic Configuration)
   double _phMin = 6.5;
   double _phMax = 8.5;
   double _turbMax = 25.0;
   double _tempMin = 10.0;
   double _tempMax = 30.0;
 
-  // New detailed thresholds
-  double _turbJernihLimit = 12.5;
+  double _turbJernihLimit = 5.0;
   double _turbAgakKeruhLimit = 25.0;
   double _tempDinginLimit = 18.0;
   double _tempNormalLimit = 26.0;
   double _phAsamLimit = 6.0;
   double _phNormalLimit = 8.0;
 
-  // Getters (Termasuk dummy MQTT untuk mencegah IDE error dari cache lama)
   SensorData? get currentData => _currentData;
   ConnectionStatus get connectionStatus => _connectionStatus;
   bool get isLoading => _isLoading;
@@ -60,16 +54,15 @@ class SensorProvider extends ChangeNotifier {
   double get turbMax => _turbMax;
   double get tempMin => _tempMin;
   double get tempMax => _tempMax;
-  
-  // Getters for detailed thresholds
+
   double get turbJernihLimit => _turbJernihLimit;
   double get turbAgakKeruhLimit => _turbAgakKeruhLimit;
   double get tempDinginLimit => _tempDinginLimit;
   double get tempNormalLimit => _tempNormalLimit;
   double get phAsamLimit => _phAsamLimit;
   double get phNormalLimit => _phNormalLimit;
-  String get mqttBroker => ''; // Deprecated
-  int get mqttPort => 1883; // Deprecated
+  String get mqttBroker => '';
+  int get mqttPort => 1883;
 
   Future<void> initialize() async {
     _isLoading = true;
@@ -79,69 +72,65 @@ class SensorProvider extends ChangeNotifier {
     await _loadSettings();
     await _loadHistoryFromPrefs();
 
-    // Aktifkan Firebase Realtime Stream
     _startFirebaseStream();
 
     _isLoading = false;
     notifyListeners();
   }
 
-
-
   void _startFirebaseStream() {
     debugPrint('🔥 Starting Firebase Stream...');
-    
-    // Batalkan subscription lama jika ada
+
     _sensorSubscription?.cancel();
     _statusSubscription?.cancel();
     _heartbeatTimer?.cancel();
-    
-    // 1. Listen to Connection Status (Presence System)
-    _statusSubscription = _database.child('monitoring/status/online').onValue.listen((event) {
+
+    _statusSubscription =
+        _database.child('monitoring/status/online').onValue.listen((event) {
       final bool isOnline = event.snapshot.value == true;
       debugPrint('📡 Device Online Status: $isOnline');
-      
+
       if (!isOnline) {
         _connectionStatus = ConnectionStatus.disconnected;
-        _notificationService.cancelAll(); // Stop notif & TTS saat terputus
+        _notificationService.cancelAll();
         notifyListeners();
       } else {
-        // If it says online, we still wait for real data to confirm
         _connectionStatus = ConnectionStatus.connected;
         notifyListeners();
       }
     });
 
-    // 2. Listen to Sensor Data
     _database.child('monitoring/current').keepSynced(true);
-    _sensorSubscription = _database.child('monitoring/current').onValue.listen((event) {
+    _sensorSubscription =
+        _database.child('monitoring/current').onValue.listen((event) {
       debugPrint('\n📥 Firebase Data Received at ${DateTime.now().toString()}');
-      
+
       if (event.snapshot.value != null) {
         _connectionStatus = ConnectionStatus.connected;
-        
+
         try {
           final dynamic rawValue = event.snapshot.value;
           Map<String, dynamic> data = {};
-          
+
           if (rawValue is Map) {
             data = Map<String, dynamic>.from(rawValue.map(
               (key, value) => MapEntry(key.toString(), value),
             ));
           }
-          
+
           final double ph = _parseToDouble(data['ph'], 7.0);
           final double turbidity = _parseToDouble(data['turbidity'], 0.0);
           final double temperature = _parseToDouble(data['temperature'], 25.0);
 
-
           final fuzzyResult = _fuzzyService.evaluate(
-            ph, turbidity, temperature,
+            ph,
+            turbidity,
+            temperature,
             phMin: _phMin,
             phMax: _phMax,
             turbMax: _turbMax,
           );
-          
+
           final newData = SensorData(
             ph: ph,
             turbidity: turbidity,
@@ -166,19 +155,19 @@ class SensorProvider extends ChangeNotifier {
     }, onError: (error) {
       debugPrint('❌ Firebase Stream Error: $error');
       _connectionStatus = ConnectionStatus.disconnected;
-      _notificationService.cancelAll(); // Stop notif & TTS saat error
+      _notificationService.cancelAll();
       notifyListeners();
     });
 
-    // 3. Fallback Heartbeat Check (Every 10 seconds)
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_lastUpdateTime != null) {
         final difference = DateTime.now().difference(_lastUpdateTime!);
-        // Jika sudah lebih dari 20 detik tidak ada data baru, anggap terputus
-        if (difference.inSeconds > 20 && _connectionStatus == ConnectionStatus.connected) {
-          debugPrint('⚠️ Heartbeat timeout: No data for ${difference.inSeconds}s. Marking as disconnected.');
+        if (difference.inSeconds > 20 &&
+            _connectionStatus == ConnectionStatus.connected) {
+          debugPrint(
+              '⚠️ Heartbeat timeout: No data for ${difference.inSeconds}s. Marking as disconnected.');
           _connectionStatus = ConnectionStatus.disconnected;
-          _notificationService.cancelAll(); // Stop notif & TTS saat timeout
+          _notificationService.cancelAll();
           notifyListeners();
         }
       }
@@ -199,19 +188,16 @@ class SensorProvider extends ChangeNotifier {
     _heartbeatTimer?.cancel();
     super.dispose();
   }
-  
-
 
   void _onSensorDataReceived(SensorData data, FuzzyResult fuzzyResult) async {
     debugPrint('📲 _onSensorDataReceived called');
     debugPrint('   Temperature: ${data.temperature} °C');
     debugPrint('   pH: ${data.ph}');
     debugPrint('   Turbidity: ${data.turbidity}');
-    
+
     _currentData = data;
     _lastFuzzyResult = fuzzyResult;
 
-    // Simpan ke history
     _historyData.insert(0, data);
     if (_historyData.length > 5000) {
       _historyData = _historyData.sublist(0, 5000);
@@ -220,14 +206,14 @@ class SensorProvider extends ChangeNotifier {
 
     await _saveHistoryToPrefs();
 
-    // Kirim notifikasi jika status Waspada atau Bahaya
-    if (_notificationsEnabled && (data.status == WaterQualityStatus.notDrinkable || data.status == WaterQualityStatus.usable)) {
+    if (_notificationsEnabled &&
+        (data.status == WaterQualityStatus.notDrinkable ||
+            data.status == WaterQualityStatus.usable)) {
       await _notificationService.sendWaterQualityAlert(
         data: data,
         fuzzyResult: data.fuzzyResult,
       );
     } else {
-      // Stop suara jika status membaik
       _notificationService.stopSpeechLoop();
     }
 
@@ -236,7 +222,6 @@ class SensorProvider extends ChangeNotifier {
     debugPrint('✅ notifyListeners() called - UI should rebuild!\n');
   }
 
-  // Filter history berdasarkan tanggal
   void filterHistory({
     DateTime? from,
     DateTime? to,
@@ -257,7 +242,6 @@ class SensorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Generate laporan bulanan
   MonthlyReport? generateMonthlyReport(int year, int month) {
     final monthData = _historyData.where((d) {
       return d.timestamp.year == year && d.timestamp.month == month;
@@ -298,7 +282,6 @@ class SensorProvider extends ChangeNotifier {
     );
   }
 
-  // Get data per jam untuk grafik
   List<SensorData> getHourlyData({int hours = 24}) {
     final cutoff = DateTime.now().subtract(Duration(hours: hours));
     return _historyData
@@ -308,10 +291,9 @@ class SensorProvider extends ChangeNotifier {
         .toList();
   }
 
-  // Settings
   Future<void> updateSettings({
-    String? broker, // Deprecated
-    int? port, // Deprecated
+    String? broker,
+    int? port,
     bool? notifications,
   }) async {
     if (notifications != null) {
@@ -319,7 +301,6 @@ class SensorProvider extends ChangeNotifier {
       if (!notifications) {
         _notificationService.stopSpeechLoop();
       } else if (_currentData != null) {
-        // Langsung munculkan notifikasi status saat ini ketika dinyalakan
         await _notificationService.sendWaterQualityAlert(
           data: _currentData!,
           fuzzyResult: _currentData!.fuzzyResult,
@@ -329,6 +310,7 @@ class SensorProvider extends ChangeNotifier {
     await _saveSettings();
     notifyListeners();
   }
+
   Future<void> updateThresholds({
     double? phMin,
     double? phMax,
@@ -342,28 +324,25 @@ class SensorProvider extends ChangeNotifier {
     double? phAsamLimit,
     double? phNormalLimit,
   }) async {
-    // Sinkronisasi agar perubahan di Pengaturan Langsung Ngefek
     if (phMin != null) _phMin = phMin;
     if (phMax != null) _phMax = phMax;
-    
-    // Jika user edit via 'Detailed' dialog di Settings, update juga phMin/phMax-nya
+
     if (phAsamLimit != null) {
       _phAsamLimit = phAsamLimit;
-      _phMin = phAsamLimit; 
+      _phMin = phAsamLimit;
     }
     if (phNormalLimit != null) {
       _phNormalLimit = phNormalLimit;
       _phMax = phNormalLimit;
     }
-    
+
     if (turbMax != null) _turbMax = turbMax;
     if (turbJernihLimit != null) {
       _turbJernihLimit = turbJernihLimit;
-      // Gunakan batas jernih sebagai turbMax dasar jika tidak ada input turbMax
       if (turbMax == null) _turbMax = turbJernihLimit;
     }
     if (turbAgakKeruhLimit != null) _turbAgakKeruhLimit = turbAgakKeruhLimit;
-    
+
     if (tempMin != null) _tempMin = tempMin;
     if (tempMax != null) _tempMax = tempMax;
     if (tempDinginLimit != null) {
@@ -388,10 +367,8 @@ class SensorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Persistence
   Future<void> _saveHistoryToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    // Simpan hanya 200 terakhir untuk efisiensi
     final toSave = _historyData.take(200).toList();
     final jsonList = toSave.map((d) => jsonEncode(d.toJson())).toList();
     await prefs.setStringList('sensor_history', jsonList);
@@ -429,7 +406,7 @@ class SensorProvider extends ChangeNotifier {
     _turbMax = prefs.getDouble('turb_max') ?? 25.0;
     _tempMin = prefs.getDouble('temp_min') ?? 10.0;
     _tempMax = prefs.getDouble('temp_max') ?? 30.0;
-    _turbJernihLimit = prefs.getDouble('turb_jernih_limit') ?? 12.5;
+    _turbJernihLimit = prefs.getDouble('turb_jernih_limit') ?? 5.0;
     _turbAgakKeruhLimit = prefs.getDouble('turb_agak_keruh_limit') ?? 25.0;
     _tempDinginLimit = prefs.getDouble('temp_dingin_limit') ?? 18.0;
     _tempNormalLimit = prefs.getDouble('temp_normal_limit') ?? 26.0;

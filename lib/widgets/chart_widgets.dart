@@ -3,17 +3,21 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/sensor_data.dart';
 import '../utils/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../providers/sensor_provider.dart';
+import 'dart:math' as math;
+
 
 class SensorLineChart extends StatefulWidget {
   final List<SensorData> data;
-  final String sensorType; // 'ph', 'turbidity', 'temperature'
+  final String sensorType;
   final int maxPoints;
 
   const SensorLineChart({
     super.key,
     required this.data,
     required this.sensorType,
-    this.maxPoints = 20,
+    this.maxPoints = 24,
   });
 
   @override
@@ -23,9 +27,15 @@ class SensorLineChart extends StatefulWidget {
 class _SensorLineChartState extends State<SensorLineChart> {
   @override
   Widget build(BuildContext context) {
-    final displayData = widget.data.length > widget.maxPoints
-        ? widget.data.sublist(widget.data.length - widget.maxPoints)
-        : widget.data;
+    List<SensorData> displayData = [];
+    if (widget.data.length > widget.maxPoints) {
+      final step = widget.data.length / widget.maxPoints;
+      for (int i = 0; i < widget.maxPoints; i++) {
+        displayData.add(widget.data[(i * step).toInt()]);
+      }
+    } else {
+      displayData = widget.data;
+    }
 
     if (displayData.isEmpty) {
       return Center(
@@ -39,6 +49,8 @@ class _SensorLineChartState extends State<SensorLineChart> {
         ),
       );
     }
+    const double minX = 0;
+    final double maxX = (displayData.isNotEmpty ? displayData.length - 1 : 0).toDouble();
 
     final spots = displayData.asMap().entries.map((e) {
       final value = _getValue(e.value);
@@ -50,8 +62,42 @@ class _SensorLineChartState extends State<SensorLineChart> {
     final maxY = _getMaxY();
     final interval = _getInterval();
 
+    final lineBar = LineChartBarData(
+      showingIndicators: spots.asMap().keys.toList(),
+      spots: spots,
+      isCurved: false,
+      color: color,
+      barWidth: 2,
+      isStrokeCapRound: true,
+      dotData: FlDotData(
+        show: true,
+        getDotPainter: (spot, x, bar, index) => FlDotCirclePainter(
+          radius: 3.5,
+          color: color,
+          strokeWidth: 0,
+        ),
+      ),
+      belowBarData: BarAreaData(
+        show: true,
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.0),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+    );
+
     return LineChart(
       LineChartData(
+        clipData: const FlClipData.none(),
+        showingTooltipIndicators: spots.asMap().keys.map((index) {
+          return ShowingTooltipIndicators([
+            LineBarSpot(lineBar, 0, spots[index]),
+          ]);
+        }).toList(),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -63,18 +109,34 @@ class _SensorLineChartState extends State<SensorLineChart> {
         ),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
+            axisNameWidget: Text(
+              _getYAxisName(),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            axisNameSize: 24,
             sideTitles: SideTitles(
               showTitles: true,
               interval: interval,
-              reservedSize: 40,
+              reservedSize: 32, // Diperkecil agar lebih dekat dengan grafik
               getTitlesWidget: (value, meta) {
-                final label = widget.sensorType == 'ph' ? value.toStringAsFixed(1) : value.toStringAsFixed(0);
-                return Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    color: AppColors.textMuted,
-                    fontSize: 9,
+                final label = widget.sensorType == 'turbidity' 
+                    ? value.toStringAsFixed(2) 
+                    : value.toStringAsFixed(1);
+                return Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: AppColors.textMuted,
+                      fontSize: 10,
+                    ),
+                    textAlign: TextAlign.right,
                   ),
                 );
               },
@@ -83,23 +145,25 @@ class _SensorLineChartState extends State<SensorLineChart> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 22,
+              reservedSize: 24,
+              interval: 3, // Menampilkan per-tiga jam / titik agar tidak bertumpuk
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index < 0 || index >= displayData.length) return const SizedBox();
-                // Tampilkan label waktu setiap kelipatan 5 data agar tidak bertumpuk
-                if (index % 5 != 0 && index != displayData.length - 1) {
-                  return const SizedBox();
-                }
-                final d = displayData[index];
+                
+                final date = displayData[index].timestamp;
+
                 return Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    DateFormat('HH:mm').format(d.timestamp),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: AppColors.textMuted,
-                      fontSize: 8,
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Transform.rotate(
+                    angle: -math.pi / 4,
+                    child: Text(
+                      DateFormat('HH:mm').format(date),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: AppColors.textMuted,
+                        fontSize: 9,
+                      ),
                     ),
                   ),
                 );
@@ -113,93 +177,104 @@ class _SensorLineChartState extends State<SensorLineChart> {
             sideTitles: SideTitles(showTitles: false),
           ),
         ),
-        borderData: FlBorderData(show: false),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            bottom: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.2), width: 1),
+            left: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.2), width: 1),
+            right: BorderSide.none,
+            top: BorderSide.none,
+          ),
+        ),
+        minX: minX,
+        maxX: maxX,
         minY: minY,
         maxY: maxY,
         lineTouchData: LineTouchData(
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => AppColors.bgCardLight,
-            tooltipRoundedRadius: 8,
-            getTooltipItems: (spots) => spots.map((s) {
-              return LineTooltipItem(
-                '${s.y.toStringAsFixed(2)} ${_getUnit()}',
-                TextStyle(
-                  fontFamily: 'Poppins',
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+          enabled: false, 
+          getTouchedSpotIndicator: (barData, spotIndexes) {
+            return spotIndexes.map((index) {
+              return const TouchedSpotIndicatorData(
+                FlLine(color: Colors.transparent),
+                FlDotData(show: false),
               );
-            }).toList(),
+            }).toList();
+          },
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => Colors.transparent,
+            tooltipPadding: EdgeInsets.zero,
+            tooltipMargin: 4,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map<LineTooltipItem?>((spot) {
+                // Format angka
+                String text = spot.y.toStringAsFixed(1);
+                
+                // Trik zig-zag: tambahkan enter (\n) bergantian berdasarkan index titik
+                if (spot.spotIndex % 2 == 0) {
+                  text = '$text\n'; // Angka agak ke atas
+                } else {
+                  text = '\n$text'; // Angka agak ke bawah
+                }
+
+                return LineTooltipItem(
+                  text,
+                  const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.black87,
+                    fontSize: 9,
+                    fontWeight: FontWeight.normal,
+                    height: 1.0, // Pastikan jarak spasi enter stabil
+                  ),
+                );
+              }).toList();
+            },
           ),
         ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            curveSmoothness: 0.3,
-            color: color,
-            barWidth: 2.5,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: displayData.length <= 10,
-              getDotPainter: (spot, x, bar, index) => FlDotCirclePainter(
-                radius: 4,
-                color: color,
-                strokeWidth: 2,
-                strokeColor: AppColors.bgDark,
-              ),
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.3),
-                  color.withValues(alpha: 0.0)
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-        ],
-        // Safe zone reference lines
-        extraLinesData: ExtraLinesData(horizontalLines: _getSafeZoneLines()),
+        lineBarsData: [lineBar],
+        extraLinesData: ExtraLinesData(horizontalLines: _getSafeZoneLines(context)),
       ),
     );
   }
 
-  List<HorizontalLine> _getSafeZoneLines() {
+  List<HorizontalLine> _getSafeZoneLines(BuildContext context) {
+    final provider = Provider.of<SensorProvider>(context, listen: true);
+
     switch (widget.sensorType) {
       case 'ph':
         return [
           HorizontalLine(
-            y: 6.5,
-            color: AppColors.warning.withValues(alpha: 0.5),
-            strokeWidth: 1,
+            y: provider.phAsamLimit,
+            color: AppColors.warning,
+            strokeWidth: 1.5,
             dashArray: [5, 5],
             label: HorizontalLineLabel(
               show: true,
-              labelResolver: (_) => 'min',
+              alignment: Alignment.bottomLeft,
+              padding: const EdgeInsets.only(left: 4, bottom: 4),
+              labelResolver: (_) => 'min ${provider.phAsamLimit}',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 color: AppColors.warning,
-                fontSize: 9,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
           HorizontalLine(
-            y: 8.5,
-            color: AppColors.warning.withValues(alpha: 0.5),
-            strokeWidth: 1,
+            y: provider.phNormalLimit,
+            color: AppColors.warning,
+            strokeWidth: 1.5,
             dashArray: [5, 5],
             label: HorizontalLineLabel(
               show: true,
-              labelResolver: (_) => 'max',
+              alignment: Alignment.topLeft,
+              padding: const EdgeInsets.only(left: 4, top: 4),
+              labelResolver: (_) => 'max ${provider.phNormalLimit}',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 color: AppColors.warning,
-                fontSize: 9,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -207,25 +282,79 @@ class _SensorLineChartState extends State<SensorLineChart> {
       case 'turbidity':
         return [
           HorizontalLine(
-            y: 5.0,
-            color: AppColors.warning.withValues(alpha: 0.5),
-            strokeWidth: 1,
+            y: provider.turbJernihLimit,
+            color: AppColors.warning,
+            strokeWidth: 1.5,
             dashArray: [5, 5],
+            label: HorizontalLineLabel(
+              show: true,
+              alignment: Alignment.bottomLeft,
+              padding: const EdgeInsets.only(left: 4, bottom: 4),
+              labelResolver: (_) => 'min ${provider.turbJernihLimit}',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.warning,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          HorizontalLine(
+            y: provider.turbAgakKeruhLimit,
+            color: AppColors.warning,
+            strokeWidth: 1.5,
+            dashArray: [5, 5],
+            label: HorizontalLineLabel(
+              show: true,
+              alignment: Alignment.topLeft,
+              padding: const EdgeInsets.only(left: 4, top: 4),
+              labelResolver: (_) => 'max ${provider.turbAgakKeruhLimit}',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.warning,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ];
       case 'temperature':
         return [
           HorizontalLine(
-            y: 10.0,
-            color: AppColors.warning.withValues(alpha: 0.5),
-            strokeWidth: 1,
+            y: provider.tempDinginLimit,
+            color: AppColors.warning,
+            strokeWidth: 1.5,
             dashArray: [5, 5],
+            label: HorizontalLineLabel(
+              show: true,
+              alignment: Alignment.bottomLeft,
+              padding: const EdgeInsets.only(left: 4, bottom: 4),
+              labelResolver: (_) => 'min ${provider.tempDinginLimit} °C',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.warning,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           HorizontalLine(
-            y: 30.0,
-            color: AppColors.warning.withValues(alpha: 0.5),
-            strokeWidth: 1,
+            y: provider.tempNormalLimit,
+            color: AppColors.warning,
+            strokeWidth: 1.5,
             dashArray: [5, 5],
+            label: HorizontalLineLabel(
+              show: true,
+              alignment: Alignment.topLeft,
+              padding: const EdgeInsets.only(left: 4, top: 4),
+              labelResolver: (_) => 'max ${provider.tempNormalLimit} °C',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.warning,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ];
       default:
@@ -259,19 +388,6 @@ class _SensorLineChartState extends State<SensorLineChart> {
     }
   }
 
-  String _getUnit() {
-    switch (widget.sensorType) {
-      case 'ph':
-        return '';
-      case 'turbidity':
-        return 'NTU';
-      case 'temperature':
-        return '°C';
-      default:
-        return '';
-    }
-  }
-
   double _getMinY() {
     switch (widget.sensorType) {
       case 'ph':
@@ -290,11 +406,24 @@ class _SensorLineChartState extends State<SensorLineChart> {
       case 'ph':
         return 14;
       case 'turbidity':
-        return 50;
+        return 50.0;
       case 'temperature':
-        return 35;
+        return 40.0;
       default:
         return 100;
+    }
+  }
+
+  String _getYAxisName() {
+    switch (widget.sensorType) {
+      case 'ph':
+        return 'pH';
+      case 'turbidity':
+        return 'Tingkat Kekeruhan (NTU)';
+      case 'temperature':
+        return 'Suhu (°C)';
+      default:
+        return '';
     }
   }
 
@@ -476,10 +605,13 @@ class SensorBarChart extends StatelessWidget {
                 if (value.toInt() >= displayData.length) return const SizedBox();
                 final d = displayData[value.toInt()];
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    DateFormat('HH:mm').format(d.timestamp),
-                    style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 8),
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Transform.rotate(
+                    angle: -math.pi / 4,
+                    child: Text(
+                      DateFormat('HH:mm').format(d.timestamp),
+                      style: TextStyle(fontFamily: 'Poppins', color: AppColors.textMuted, fontSize: 8),
+                    ),
                   ),
                 );
               },
@@ -489,7 +621,7 @@ class SensorBarChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               interval: _getInterval(),
-              reservedSize: 30,
+              reservedSize: 24,
               getTitlesWidget: (value, meta) {
                 final label = sensorType == 'ph' ? value.toStringAsFixed(1) : value.toStringAsFixed(0);
                 return Text(
@@ -504,9 +636,11 @@ class SensorBarChart extends StatelessWidget {
         ),
         gridData: FlGridData(
           show: true,
-          drawVerticalLine: false,
+          drawVerticalLine: true,
           horizontalInterval: _getInterval(),
+          verticalInterval: 1,
           getDrawingHorizontalLine: (v) => FlLine(color: AppColors.textMuted.withValues(alpha: 0.1), strokeWidth: 1),
+          getDrawingVerticalLine: (v) => FlLine(color: AppColors.textMuted.withValues(alpha: 0.1), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: displayData.asMap().entries.map((e) {

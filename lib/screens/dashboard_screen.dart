@@ -21,7 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
   int _selectedChart = 0;
-  int _selectedChartStyle = 0; // 0 for Line, 1 for Bar
+  int _selectedChartStyle = 0;
 
   @override
   void initState() {
@@ -94,7 +94,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        // Side-by-side Gauge and Sensors
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -113,7 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         if (fuzzy != null) _buildCompactAnalysis(fuzzy),
         const SizedBox(height: 20),
         _buildInteractiveCharts(provider),
-        const SizedBox(height: 100), // Space for floating navbar
+        const SizedBox(height: 100),
       ],
     );
   }
@@ -184,7 +183,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _miniVerticalSensorCard(
       String label, String value, String unit, Color color, IconData icon) {
-    // Menghitung progress untuk grafik batang
     double numericValue = double.tryParse(value) ?? 0.0;
     double progress = 0.0;
     
@@ -203,7 +201,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Value and Unit
           Text(
             value,
             style: TextStyle(
@@ -223,10 +220,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           const SizedBox(height: 8),
-          // Vertical Bar
           Container(
-            height: 90, // Tinggi batang
-            width: 20, // Lebar batang
+            height: 90,
+            width: 20,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
@@ -265,7 +261,6 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           const SizedBox(height: 8),
-          // Icon and Label
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
@@ -334,7 +329,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               child: Image.asset(
                 'assets/icons/logo.png',
-                width: 40, // Increased size
+                width: 40,
                 height: 40,
               ),
             ),
@@ -473,7 +468,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    // Mini progress bar
                     ClipRRect(
                       borderRadius: BorderRadius.circular(2),
                       child: SizedBox(
@@ -499,7 +493,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildInteractiveCharts(SensorProvider provider) {
-    final hourlyData = provider.getHourlyData(hours: 12);
+    final hourlyData = provider.getHourlyData(hours: 24);
     final chartTypes = ['pH', 'NTU', '°C'];
     final chartColors = [
       AppColors.chartPH,
@@ -515,7 +509,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Style Toggle Button
               GestureDetector(
                 onTap: () => setState(
                     () => _selectedChartStyle = (_selectedChartStyle + 1) % 2),
@@ -550,7 +543,28 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
               ),
-              // Sensor Type Selector
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: chartColors[_selectedChart],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    chartTypes[_selectedChart],
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(

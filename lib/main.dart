@@ -19,29 +19,23 @@ import 'providers/theme_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inisialisasi Firebase (try-catch agar tidak crash saat hot restart)
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    // Firebase sudah terinisialisasi (terjadi saat hot restart), abaikan
     debugPrint('Firebase already initialized: $e');
   }
 
-  // Inisialisasi Notifikasi
   await NotificationService().initialize();
 
-  // Inisialisasi Background Service
   await BackgroundService.initialize();
 
-  // Lock orientation portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Status bar style
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -119,7 +113,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   @override
   Widget build(BuildContext context) {
-    context.watch<ThemeProvider>(); // Rebuild on theme change
+    context.watch<ThemeProvider>();
 
     return Scaffold(
       extendBody: true,
@@ -153,7 +147,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   Widget _buildBottomNav() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4), // Even lower (lebih pepet bawah)
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -163,7 +157,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
             decoration: BoxDecoration(
               color: AppColors.isDarkMode 
                   ? const Color(0xFF161B22).withValues(alpha: 0.75) 
-                  : Colors.white.withValues(alpha: 0.85), // Soft white in light mode
+                  : Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: AppColors.isDarkMode 
@@ -236,7 +230,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
               ),
               child: Text(label),
             ),
-            // Active dot indicator
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(top: 2),

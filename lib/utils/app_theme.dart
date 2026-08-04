@@ -111,11 +111,11 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.bgDark, // Dynamically maps to light grey
+      scaffoldBackgroundColor: AppColors.bgDark,
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.accent,
-        surface: AppColors.bgCard, // Dynamically maps to White
+        surface: AppColors.bgCard,
         error: AppColors.danger,
       ),
       fontFamily: 'Poppins',

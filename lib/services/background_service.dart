@@ -49,14 +49,12 @@ class BackgroundService {
     
     debugPrint('🚀 Background Isolate Started: ${DateTime.now()}');
 
-    // Inisialisasi Firebase di Isolate terpisah
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      // Aktifkan persistence agar koneksi lebih stabil di background
       FirebaseDatabase.instance.setPersistenceEnabled(true);
-      FirebaseDatabase.instance.goOnline(); // Paksa online
+      FirebaseDatabase.instance.goOnline();
     } catch (e) {
       debugPrint('Background Firebase already initialized: $e');
     }
@@ -77,7 +75,6 @@ class BackgroundService {
       });
     }
 
-    // Heartbeat log & Update Notification supaya OS nggak bunuh service
     Timer.periodic(const Duration(seconds: 20), (timer) {
       if (service is AndroidServiceInstance) {
         service.setForegroundNotificationInfo(
@@ -92,9 +89,8 @@ class BackgroundService {
       service.stopSelf();
     });
 
-    // Firebase Listener di Background dengan Keep Alive
     DatabaseReference database = FirebaseDatabase.instance.ref('monitoring/current');
-    database.keepSynced(true); // Memastikan data tetap sinkron di background
+    database.keepSynced(true);
     
     database.onValue.listen((event) {
       debugPrint("🔥 [BACKGROUND] Data received from Firebase!");
@@ -105,7 +101,6 @@ class BackgroundService {
         
         debugPrint("🔥 [BACKGROUND] pH: $ph, Turb: $turbidity");
         
-        // Hitung status lokal di background
         final fuzzy = fuzzyService.evaluate(ph, turbidity, 25.0);
         
         if (fuzzy.status == WaterQualityStatus.notDrinkable || fuzzy.status == WaterQualityStatus.usable) {
@@ -126,7 +121,6 @@ class BackgroundService {
       }
     });
     
-    // Listener utama yang lebih tahan banting
     database.onValue.listen((event) async {
       debugPrint('📥 Background Data Received: ${DateTime.now()}');
       if (event.snapshot.value != null) {
@@ -154,7 +148,6 @@ class BackgroundService {
           final status = fuzzyResult.status;
           final statusStr = fuzzyResult.statusLabel;
           
-          // Kirim notif via service (filter sudah ada di dalam notificationService)
           await notificationService.sendWaterQualityAlert(
             data: SensorData(
               ph: ph,
@@ -168,7 +161,6 @@ class BackgroundService {
             fuzzyResult: statusStr,
           );
 
-          // Update info di bar notifikasi (foreground info)
           if (service is AndroidServiceInstance) {
             String title = "TirtaSmart: Aktif Memantau";
             String content = "Kondisi: $statusStr (NTU: ${turbidity.toStringAsFixed(1)})";

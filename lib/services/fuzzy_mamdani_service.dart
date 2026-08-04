@@ -1,29 +1,12 @@
 import '../models/sensor_data.dart';
 
-/// Implementasi Fuzzy Logic Mamdani untuk menentukan kualitas air
-/// Variabel input: pH, Turbidity (kekeruhan), Temperature (suhu)
-/// Variabel output: water quality score (0-100)
 class FuzzyMamdaniService {
-  // ============================================================
-  // FUNGSI KEANGGOTAAN pH (6.5 - 8.5 standar PDAM)
-  // ============================================================
-
-  // ============================================================
-  // FUNGSI KEANGGOTAAN pH (Sesuai Permintaan: Asam, Normal, Basa)
-  // ============================================================
-
-  // ============================================================
-  // FUNGSI KEANGGOTAAN pH (Dinamis sesuai Pengaturan)
-  // ============================================================
-  
-  /// pH Asam: Di bawah phMin
-  double _phAcidic(double ph, double phMin) {
+  double _phAsam(double ph, double phMin) {
     if (ph <= phMin - 1.0) return 1.0;
     if (ph <= phMin) return (phMin - ph) / 1.0;
     return 0.0;
   }
 
-  /// pH Normal: Antara phMin dan phMax
   double _phNormal(double ph, double phMin, double phMax) {
     if (ph <= phMin - 1.0 || ph >= phMax + 1.0) return 0.0;
     if (ph <= phMin) return (ph - (phMin - 1.0)) / 1.0;
@@ -32,50 +15,36 @@ class FuzzyMamdaniService {
     return 0.0;
   }
 
-  /// pH Basa: Di atas phMax
-  double _phAlkaline(double ph, double phMax) {
+  double _phBasa(double ph, double phMax) {
     if (ph <= phMax) return 0.0;
     if (ph <= phMax + 1.0) return (ph - phMax) / 1.0;
     return 1.0;
   }
 
-  // ============================================================
-  // FUNGSI KEANGGOTAAN TURBIDITY (Dinamis sesuai Pengaturan)
-  // ============================================================
-
-  /// Bersih: 0 - 5 NTU
   double _turbBersih(double ntu, double turbMax) {
     if (ntu <= 5.0) return 1.0;
-    if (ntu <= 7.5) return (7.5 - ntu) / 2.5;
+    if (ntu <= 7.0) return (7.0 - ntu) / 2.0;
     return 0.0;
   }
 
-  /// Agak Keruh: 5 - 25 NTU
   double _turbAgakKeruh(double ntu, double turbMax) {
     if (ntu <= 5.0 || ntu >= 25.0) return 0.0;
     if (ntu <= 15.0) return (ntu - 5.0) / 10.0;
     return (25.0 - ntu) / 10.0;
   }
 
-  /// Keruh: Di atas 25 NTU
   double _turbKeruh(double ntu, double turbMax) {
     if (ntu <= 20.0) return 0.0;
-    if (ntu <= 25.0) return (ntu - 20.0) / 5.0;
+    if (ntu < 25.0) return (ntu - 20.0) / 5.0;
     return 1.0;
   }
 
-  // ============================================================
-  // FUNGSI KEANGGOTAAN TEMPERATURE (Suhu: Dingin, Normal, Panas)
-  // ============================================================
-
-  /// Dingin: <= 20°C
   double _tempDingin(double temp) {
     if (temp <= 18.0) return 1.0;
     if (temp <= 22.0) return (22.0 - temp) / 4.0;
     return 0.0;
   }
 
-  /// Sedang: [20, 30]
   double _tempSedang(double temp) {
     if (temp <= 18.0) return 0.0;
     if (temp <= 22.0) return (temp - 18.0) / 4.0;
@@ -84,16 +53,11 @@ class FuzzyMamdaniService {
     return 0.0;
   }
 
-  /// Tinggi: >= 30°C
   double _tempTinggi(double temp) {
     if (temp <= 28.0) return 0.0;
     if (temp <= 32.0) return (temp - 28.0) / 4.0;
     return 1.0;
   }
-
-  // ============================================================
-  // OUTPUT MEMBERSHIP FUNCTIONS (Quality Score 0-100)
-  // ============================================================
 
   Map<String, double> _getOutputCentroids() {
     return {
@@ -105,10 +69,6 @@ class FuzzyMamdaniService {
     };
   }
 
-  // ============================================================
-  // RULE BASE (Fuzzy Rules Mamdani)
-  // ============================================================
-
   Map<String, double> _applyRules({
     required double ph,
     required double turbidity,
@@ -117,10 +77,9 @@ class FuzzyMamdaniService {
     required double phMax,
     required double turbMax,
   }) {
-    // Hitung derajat keanggotaan input (Dinamis)
-    final phAcidic = _phAcidic(ph, phMin);
+    final phAsam = _phAsam(ph, phMin);
     final phNormal = _phNormal(ph, phMin, phMax);
-    final phAlkaline = _phAlkaline(ph, phMax);
+    final phBasa = _phBasa(ph, phMax);
 
     final tBersih = _turbBersih(turbidity, turbMax);
     final tAgakKeruh = _turbAgakKeruh(turbidity, turbMax);
@@ -130,7 +89,6 @@ class FuzzyMamdaniService {
     final tempSedang = _tempSedang(temperature);
     final tempTinggi = _tempTinggi(temperature);
 
-    // Akumulasi output fuzzy
     Map<String, double> output = {
       'sangatBuruk': 0.0,
       'buruk': 0.0,
@@ -145,28 +103,20 @@ class FuzzyMamdaniService {
       }
     }
 
-    // ---- RULES LOGIC (Prioritas Kekeruhan / Turbidity Maksimal) ----
-
-    // 1. KONDISI TERBAIK (Sangat Baik = 95): Kekeruhan Bersih
-    // Menggunakan semua variabel agar memenuhi syarat Fuzzy Mamdani multi-variabel akademis,
-    // namun kita arahkan semuanya ke 'sangatBaik' jika NTU bersih agar skor tetap 90-an.
     applyRule(_min([tBersih, phNormal, tempSedang]), 'sangatBaik');
     applyRule(_min([tBersih, phNormal, tempDingin]), 'sangatBaik');
     applyRule(_min([tBersih, phNormal, tempTinggi]), 'sangatBaik');
-    applyRule(_min([tBersih, phAcidic]), 'sangatBaik');
-    applyRule(_min([tBersih, phAlkaline]), 'sangatBaik');
-    
-    // 2. KONDISI CUKUP (Cukup = 50 -> Waspada): Kekeruhan Agak Keruh (5-25 NTU)
-    // Variabel suhu kita libatkan di sini
+    applyRule(_min([tBersih, phAsam]), 'sangatBaik');
+    applyRule(_min([tBersih, phBasa]), 'sangatBaik');
+
     applyRule(_min([tAgakKeruh, tempSedang]), 'cukup');
     applyRule(_min([tAgakKeruh, tempDingin]), 'cukup');
     applyRule(_min([tAgakKeruh, tempTinggi]), 'cukup');
     applyRule(_min([tAgakKeruh, phNormal]), 'cukup');
-    
-    // 3. KONDISI BURUK / SANGAT BURUK (Bahaya): Kekeruhan Keruh (>25 NTU)
+
     applyRule(tKeruh, 'buruk');
-    applyRule(_min([tKeruh, phAcidic]), 'sangatBuruk');
-    applyRule(_min([tKeruh, phAlkaline]), 'sangatBuruk');
+    applyRule(_min([tKeruh, phAsam]), 'sangatBuruk');
+    applyRule(_min([tKeruh, phBasa]), 'sangatBuruk');
 
     return output;
   }
@@ -178,10 +128,6 @@ class FuzzyMamdaniService {
     }
     return min;
   }
-
-  // ============================================================
-  // DEFUZZIFIKASI (Metode Centroid)
-  // ============================================================
 
   FuzzyResult evaluate(
     double ph,
@@ -210,19 +156,15 @@ class FuzzyMamdaniService {
       denominator += strength;
     });
 
-    final double qualityScore =
-        denominator == 0.0 ? 0.0 : numerator / denominator;
+    double qualityScore = denominator == 0.0 ? 0.0 : numerator / denominator;
 
-    // Tentukan status berdasarkan skor (Kembali menggunakan qualityScore agar sinkron dengan UI)
-    // Score 50 (Cukup) -> Waspada
-    // Score >= 70 (Baik/Sangat Baik) -> Aman
     WaterQualityStatus status;
     String statusLabel;
 
     if (qualityScore >= 70) {
       status = WaterQualityStatus.drinkable;
       statusLabel = 'Aman';
-    } else if (qualityScore >= 35) { // Score 50 masuk ke range Waspada
+    } else if (qualityScore >= 35) {
       status = WaterQualityStatus.usable;
       statusLabel = 'Waspada';
     } else {
@@ -230,8 +172,28 @@ class FuzzyMamdaniService {
       statusLabel = 'Bahaya';
     }
 
-    final diagnosis = _buildDiagnosis(ph, turbidity, temperature, phMin, phMax, turbMax);
-    final recommendation = _buildRecommendation(status, ph, turbidity, temperature);
+    // --- HARD OVERRIDE TURBIDITY ---
+    // Memaksa status berdasarkan batas mutlak Kekeruhan (NTU)
+    if (turbidity > 25.0) {
+      status = WaterQualityStatus.notDrinkable;
+      statusLabel = 'Bahaya';
+      if (qualityScore >= 35) {
+        qualityScore = 34.0; // Turunkan score ke Bahaya
+      }
+    } else if (turbidity > 5.0) {
+      if (status == WaterQualityStatus.drinkable) {
+        status = WaterQualityStatus.usable;
+        statusLabel = 'Waspada';
+        if (qualityScore >= 70) {
+          qualityScore = 69.0; // Turunkan score ke Waspada
+        }
+      }
+    }
+
+    final diagnosis =
+        _buildDiagnosis(ph, turbidity, temperature, phMin, phMax, turbMax);
+    final recommendation =
+        _buildRecommendation(status, ph, turbidity, temperature);
 
     return FuzzyResult(
       qualityScore: qualityScore,
@@ -243,10 +205,14 @@ class FuzzyMamdaniService {
     );
   }
 
-  String _buildDiagnosis(double ph, double turbidity, double temperature, double phMin, double phMax, double turbMax) {
+  String _buildDiagnosis(double ph, double turbidity, double temperature,
+      double phMin, double phMax, double turbMax) {
     String pHCat = ph < phMin ? 'Asam' : (ph > phMax ? 'Basa' : 'Normal');
-    String turbCat = turbidity < turbMax * 0.5 ? 'Bersih' : (turbidity < turbMax ? 'Agak Keruh' : 'Keruh');
-    String tempCat = temperature < 20 ? 'Dingin' : (temperature < 30 ? 'Sedang' : 'Tinggi');
+    String turbCat = turbidity < turbMax * 0.5
+        ? 'Bersih'
+        : (turbidity < turbMax ? 'Agak Keruh' : 'Keruh');
+    String tempCat =
+        temperature < 20 ? 'Dingin' : (temperature < 30 ? 'Sedang' : 'Tinggi');
 
     return 'Kondisi: pH $pHCat, Kekeruhan $turbCat, Suhu $tempCat';
   }

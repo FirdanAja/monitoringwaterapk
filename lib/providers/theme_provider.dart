@@ -11,7 +11,6 @@ class ThemeProvider with ChangeNotifier {
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
-    // Default to dark mode if not set
     final isDark = prefs.getBool(_themeKey) ?? true;
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     AppColors.isDarkMode = isDark;

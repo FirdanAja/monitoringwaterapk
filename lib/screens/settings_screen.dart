@@ -8,7 +8,6 @@ import '../widgets/sensor_widgets.dart';
 import '../services/notification_service.dart';
 import '../models/sensor_data.dart';
 
-
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -45,8 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   _buildHeader(),
                   SizedBox(height: res.h(16)),
-                  
-                  // 1. Toggles Row (Notification & Theme Mode side-by-side)
+
                   Row(
                     children: [
                       Expanded(
@@ -58,28 +56,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: res.h(12)),
-                  
-                  // 2. Standards Card (Below them, full width)
+
                   _buildStandardsCard(provider),
-                  
-                  SizedBox(height: res.h(16)),
-                  
-                  // Middle: App Info
+
                   _buildSectionHeader('Informasi Aplikasi'),
                   SizedBox(height: res.h(8)),
                   _buildAppInfoCard(),
-                  
+
                   SizedBox(height: res.h(16)),
-                  
-                  // Bottom: Fuzzy Configuration (Compact)
+
                   _buildSectionHeader('Konfigurasi Fuzzy Mamdani'),
                   SizedBox(height: res.h(8)),
                   Expanded(
                     child: _buildFuzzyConfigCard(),
                   ),
-                  
+
                   SizedBox(height: res.h(12)),
                 ],
               ),
@@ -142,10 +135,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.notifications_active, 
-                color: AppColors.accent, 
-                size: context.responsive.w(20)
-              ),
+              Icon(Icons.notifications_active,
+                  color: AppColors.accent, size: context.responsive.w(20)),
               Transform.scale(
                 scale: 0.8,
                 child: Switch(
@@ -200,7 +191,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -286,46 +278,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Expanded(
             child: _buildEditableStandard(
-              'Batas pH', 
-              '${provider.phAsamLimit} - ${provider.phNormalLimit}', 
-              AppColors.chartPH,
-              () => _showEditThresholdDialog('pH_Detailed', provider)
-            ),
+                'Batas pH',
+                '${provider.phAsamLimit} - ${provider.phNormalLimit}',
+                AppColors.chartPH,
+                () => _showEditThresholdDialog('pH_Detailed', provider)),
           ),
           Container(
             width: 1,
             height: res.h(45),
-            color: AppColors.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: AppColors.isDarkMode
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
             margin: EdgeInsets.symmetric(horizontal: res.w(4)),
           ),
           Expanded(
             child: _buildEditableStandard(
-              'Batas NTU', 
-              '${provider.turbJernihLimit} - ${provider.turbAgakKeruhLimit}', 
-              AppColors.chartTurbidity,
-              () => _showEditThresholdDialog('Turbidity_Detailed', provider)
-            ),
+                'Batas NTU',
+                '${provider.turbJernihLimit} - ${provider.turbAgakKeruhLimit}',
+                AppColors.chartTurbidity,
+                () => _showEditThresholdDialog('Turbidity_Detailed', provider)),
           ),
           Container(
             width: 1,
             height: res.h(45),
-            color: AppColors.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: AppColors.isDarkMode
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
             margin: EdgeInsets.symmetric(horizontal: res.w(4)),
           ),
           Expanded(
             child: _buildEditableStandard(
-              'Batas Suhu', 
-              '${provider.tempDinginLimit} - ${provider.tempNormalLimit}', 
-              AppColors.chartTemp,
-              () => _showEditThresholdDialog('Temperature_Detailed', provider)
-            ),
+                'Batas Suhu',
+                '${provider.tempDinginLimit} - ${provider.tempNormalLimit}',
+                AppColors.chartTemp,
+                () =>
+                    _showEditThresholdDialog('Temperature_Detailed', provider)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEditableStandard(String label, String value, Color color, VoidCallback onTap) {
+  Widget _buildEditableStandard(
+      String label, String value, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -423,7 +418,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: TextStyle(fontFamily: 'Poppins', color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(title,
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -434,7 +434,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: InputDecoration(
                 labelText: label1,
                 labelStyle: TextStyle(color: AppColors.textMuted),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.2))),
+                enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                        color: AppColors.textMuted.withValues(alpha: 0.2))),
               ),
             ),
             if (isRange) ...[
@@ -446,7 +448,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 decoration: InputDecoration(
                   labelText: label2,
                   labelStyle: TextStyle(color: AppColors.textMuted),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.2))),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                          color: AppColors.textMuted.withValues(alpha: 0.2))),
                 ),
               ),
             ],
@@ -461,14 +465,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               final val1 = double.tryParse(controller1.text);
               final val2 = isRange ? double.tryParse(controller2.text) : null;
-              
+
               if (val1 != null && (!isRange || val2 != null)) {
                 if (type == 'pH_Detailed') {
-                  provider.updateThresholds(phAsamLimit: val1, phNormalLimit: val2);
+                  provider.updateThresholds(
+                      phAsamLimit: val1, phNormalLimit: val2);
                 } else if (type == 'Turbidity_Detailed') {
-                  provider.updateThresholds(turbJernihLimit: val1, turbAgakKeruhLimit: val2);
+                  provider.updateThresholds(
+                      turbJernihLimit: val1, turbAgakKeruhLimit: val2);
                 } else if (type == 'Temperature_Detailed') {
-                  provider.updateThresholds(tempDinginLimit: val1, tempNormalLimit: val2);
+                  provider.updateThresholds(
+                      tempDinginLimit: val1, tempNormalLimit: val2);
                 } else if (type == 'pH') {
                   provider.updateThresholds(phMin: val1, phMax: val2);
                 } else if (type == 'Kekeruhan') {
@@ -478,12 +485,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: const Text('Ambang batas berhasil diperbarui'), backgroundColor: AppColors.good),
+                  SnackBar(
+                      content: const Text('Ambang batas berhasil diperbarui'),
+                      backgroundColor: AppColors.good),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
-            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Simpan',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -601,7 +612,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   runSpacing: 0,
                   children: (section['items'] as List<String>).map((item) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(4),

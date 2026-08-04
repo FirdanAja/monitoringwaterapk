@@ -83,7 +83,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         context.responsive.w(16), 
         context.responsive.w(8), 
         context.responsive.w(16), 
-        120 // Bottom padding for navbar
+        120
       ),
       physics: const BouncingScrollPhysics(),
       itemCount: data.length,
