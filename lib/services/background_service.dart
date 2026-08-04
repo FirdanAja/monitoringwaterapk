@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import '../firebase_options.dart';
@@ -14,6 +15,11 @@ import 'fuzzy_mamdani_service.dart';
 class BackgroundService {
   @pragma('vm:entry-point')
   static Future<void> initialize() async {
+    if (kIsWeb) {
+      debugPrint("BackgroundService is not supported on Web. Skipping initialization.");
+      return;
+    }
+    
     final service = FlutterBackgroundService();
 
     await service.configure(
